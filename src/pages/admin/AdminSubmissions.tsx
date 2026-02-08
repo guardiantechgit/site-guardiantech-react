@@ -13,20 +13,29 @@ type Submission = Tables<"form_submissions"> & {
   installation_paid?: boolean;
 };
 
-const statusColors: Record<string, string> = {
-  recebido: "bg-blue-100 text-blue-700",
-  lido: "bg-sky-100 text-sky-700",
-  confirmado: "bg-emerald-100 text-emerald-700",
-  cancelado: "bg-red-100 text-red-700",
-  instalado: "bg-purple-100 text-purple-700",
+const getDisplayStatus = (s: Submission) => {
+  if (s.status === "recebido" || s.status === "lido") return "recebido";
+  if (s.status === "cancelado") return "cancelado";
+  if (s.status === "confirmado") return "confirmado";
+  if (s.status === "instalado" && (s as any).installation_paid) return "instalado_pago";
+  if (s.status === "instalado") return "instalado_pendente";
+  return s.status;
 };
 
-const statusLabels: Record<string, string> = {
+const displayStatusColors: Record<string, string> = {
+  recebido: "bg-blue-100 text-blue-700",
+  confirmado: "bg-amber-100 text-amber-700",
+  instalado_pendente: "bg-purple-100 text-purple-700",
+  instalado_pago: "bg-emerald-100 text-emerald-700",
+  cancelado: "bg-red-100 text-red-700",
+};
+
+const displayStatusLabels: Record<string, string> = {
   recebido: "Recebido",
-  lido: "Lido",
-  confirmado: "Confirmado",
+  confirmado: "Confirmado — Instalação Pendente",
+  instalado_pendente: "Instalado — Pagamento Pendente",
+  instalado_pago: "Instalado e Pago",
   cancelado: "Cancelado",
-  instalado: "Instalado",
 };
 
 const AdminSubmissions = () => {
@@ -188,9 +197,11 @@ const AdminSubmissions = () => {
                     <td className="px-4 py-3 text-muted-foreground">{s.plan_name || "—"}</td>
                     <td className="px-4 py-3 text-muted-foreground text-xs">{formatDate(s.created_at)}</td>
                     <td className="px-4 py-3 text-center">
-                      <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[s.status] || "bg-gray-100 text-gray-700"}`}>
-                        {statusLabels[s.status] || s.status}
+                      {(() => { const ds = getDisplayStatus(s); return (
+                      <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium ${displayStatusColors[ds] || "bg-gray-100 text-gray-700"}`}>
+                        {displayStatusLabels[ds] || s.status}
                       </span>
+                      ); })()}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <Button variant="ghost" size="sm" onClick={() => handleOpenDetail(s)}>
@@ -215,16 +226,13 @@ const AdminSubmissions = () => {
               </DialogHeader>
 
               {/* Status badge */}
+              {(() => { const ds = getDisplayStatus(selected); return (
               <div className="flex items-center gap-2 flex-wrap mb-2">
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[selected.status] || "bg-gray-100 text-gray-700"}`}>
-                  {statusLabels[selected.status] || selected.status}
+                <span className={`px-3 py-1 rounded-full text-xs font-medium ${displayStatusColors[ds] || "bg-gray-100 text-gray-700"}`}>
+                  {displayStatusLabels[ds] || selected.status}
                 </span>
-                {isInstalled && (
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${(selected as any).installation_paid ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
-                    {(selected as any).installation_paid ? "Instalação paga" : "Instalação pendente"}
-                  </span>
-                )}
               </div>
+              ); })()}
 
               {/* Action buttons */}
               <div className="flex items-center gap-2 flex-wrap mb-4">
