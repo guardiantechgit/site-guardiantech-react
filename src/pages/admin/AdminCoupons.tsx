@@ -239,24 +239,31 @@ const AdminCoupons = () => {
               </Select>
 
               {form.representative_id && form.representative_id !== "none" && (
-                <div className="flex gap-3">
-                  <Select value={form.commission_mode} onValueChange={(v) => setForm({ ...form, commission_mode: v })}>
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="fixed">Valor fixo</SelectItem>
-                      <SelectItem value="percent">Percentual</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Input
-                    type="number"
-                    min={0}
-                    value={form.commission_value}
-                    onChange={(e) => setForm({ ...form, commission_value: Number(e.target.value) })}
-                    placeholder={form.commission_mode === "percent" ? "Ex: 10" : "Ex: 50.00"}
-                  />
-                </div>
+                <>
+                  <label className="text-xs text-muted-foreground">Comissão sob instalação</label>
+                  <div className="flex gap-3 items-center">
+                    <Select value={form.commission_mode} onValueChange={(v) => setForm({ ...form, commission_mode: v })}>
+                      <SelectTrigger className="w-[120px] shrink-0">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="fixed">Valor fixo</SelectItem>
+                        <SelectItem value="percent">Percentual</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <div className="relative flex-1">
+                      {form.commission_mode === "fixed" && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</span>}
+                      <Input
+                        type="number" min={0}
+                        value={form.commission_value}
+                        onChange={(e) => setForm({ ...form, commission_value: Number(e.target.value) })}
+                        placeholder={form.commission_mode === "percent" ? "10" : "50,00"}
+                        className={form.commission_mode === "fixed" ? "pl-10" : ""}
+                      />
+                      {form.commission_mode === "percent" && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>}
+                    </div>
+                  </div>
+                </>
               )}
             </div>
 
@@ -267,15 +274,25 @@ const AdminCoupons = () => {
                 <span className="text-sm font-medium">Desconto na instalação</span>
               </div>
               {form.install_discount_enabled && (
-                <div className="flex gap-3">
+                <div className="flex gap-3 items-center">
                   <Select value={form.install_discount_mode} onValueChange={(v) => setForm({ ...form, install_discount_mode: v })}>
-                    <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="w-[120px] shrink-0"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="percent">Percentual</SelectItem>
                       <SelectItem value="fixed">Valor fixo</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Input type="number" min={0} value={form.install_discount_value} onChange={(e) => setForm({ ...form, install_discount_value: Number(e.target.value) })} placeholder={form.install_discount_mode === "percent" ? "Ex: 10" : "Ex: 50.00"} />
+                  <div className="relative flex-1">
+                    {form.install_discount_mode === "fixed" && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</span>}
+                    <Input
+                      type="number" min={0}
+                      value={form.install_discount_value}
+                      onChange={(e) => setForm({ ...form, install_discount_value: Number(e.target.value) })}
+                      placeholder={form.install_discount_mode === "percent" ? "10" : "50,00"}
+                      className={form.install_discount_mode === "fixed" ? "pl-10" : ""}
+                    />
+                    {form.install_discount_mode === "percent" && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>}
+                  </div>
                 </div>
               )}
             </div>
@@ -287,15 +304,25 @@ const AdminCoupons = () => {
                 <span className="text-sm font-medium">Desconto na mensalidade</span>
               </div>
               {form.monthly_discount_enabled && (
-                <div className="flex gap-3">
+                <div className="flex gap-3 items-center">
                   <Select value={form.monthly_discount_mode} onValueChange={(v) => setForm({ ...form, monthly_discount_mode: v })}>
-                    <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="w-[120px] shrink-0"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="percent">Percentual</SelectItem>
                       <SelectItem value="fixed">Valor fixo</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Input type="number" min={0} value={form.monthly_discount_value} onChange={(e) => setForm({ ...form, monthly_discount_value: Number(e.target.value) })} placeholder={form.monthly_discount_mode === "percent" ? "Ex: 10" : "Ex: 15.00"} />
+                  <div className="relative flex-1">
+                    {form.monthly_discount_mode === "fixed" && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</span>}
+                    <Input
+                      type="number" min={0}
+                      value={form.monthly_discount_value}
+                      onChange={(e) => setForm({ ...form, monthly_discount_value: Number(e.target.value) })}
+                      placeholder={form.monthly_discount_mode === "percent" ? "10" : "15,00"}
+                      className={form.monthly_discount_mode === "fixed" ? "pl-10" : ""}
+                    />
+                    {form.monthly_discount_mode === "percent" && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>}
+                  </div>
                 </div>
               )}
             </div>
