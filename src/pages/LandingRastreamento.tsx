@@ -95,7 +95,11 @@ const LandingRastreamento = () => {
                   <div className="text-sm text-medium-gray mb-6">por mês</div>
                   <ul className="space-y-3 mb-8">
                     {plan.features.map((f, j) => (
-                      <li key={j} className="text-sm text-medium-gray py-2 border-b border-extra-medium-gray/30 last:border-0" dangerouslySetInnerHTML={{ __html: f.replace("Inclui", "<strong>Inclui</strong>") }} />
+                      <li key={j} className="text-sm text-medium-gray py-2 border-b border-extra-medium-gray/30 last:border-0">
+                        {f.includes("Inclui") ? (
+                          <>{f.split("Inclui")[0]}<strong>Inclui</strong>{f.split("Inclui")[1]}</>
+                        ) : f}
+                      </li>
                     ))}
                   </ul>
                   <a href="#contrate-agora" className={`inline-block px-8 py-3 rounded-full font-medium text-sm transition ${plan.popular ? "bg-base-color text-white hover:bg-base-color/90" : "bg-dark-gray text-white hover:bg-dark-gray/90"}`}>
