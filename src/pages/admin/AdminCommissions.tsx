@@ -134,9 +134,21 @@ const AdminCommissions = () => {
 
   const formatCurrency = (v: number) => `R$ ${v.toFixed(2).replace(".", ",")}`;
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
     const printContent = reportRef.current;
     if (!printContent) return;
+
+    // Convert logo to base64 so it works in the print window
+    let logoBase64 = "";
+    try {
+      const resp = await fetch("/images/logo-rastreamento-branco.png");
+      const blob = await resp.blob();
+      logoBase64 = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+    } catch { /* fallback: no logo */ }
 
     const win = window.open("", "_blank");
     if (!win) return;
@@ -223,7 +235,7 @@ const AdminCommissions = () => {
       </style></head><body>
 
       <div class="print-header">
-        <img src="${window.location.origin}/images/logo-rastreamento-branco.png" alt="GuardianTech Rastreamento" />
+        ${logoBase64 ? `<img src="${logoBase64}" alt="GuardianTech Rastreamento" />` : `<span style="font-size:18px;font-weight:700;color:#AF985A;">GuardianTech Rastreamento</span>`}
         <div class="print-header-info">
           <strong>Relatório de Comissões</strong>
           ${today}
