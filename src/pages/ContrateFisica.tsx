@@ -640,7 +640,7 @@ const ContrateFisica = () => {
                             </div>
                           )}
                           <input ref={docUpload.inputRef1} type="file" className="hidden"
-                            accept="image/jpeg,image/png,image/webp,image/heic,image/heif,application/pdf"
+                            accept="image/jpeg,image/png,image/webp,image/heic,image/heif,image/gif,application/pdf"
                             onChange={docUpload.handleFileSelect(1)} />
                         </div>
                         {/* Verso */}
@@ -671,7 +671,7 @@ const ContrateFisica = () => {
                             </div>
                           )}
                           <input ref={docUpload.inputRef2} type="file" className="hidden"
-                            accept="image/jpeg,image/png,image/webp,image/heic,image/heif,application/pdf"
+                            accept="image/jpeg,image/png,image/webp,image/heic,image/heif,image/gif,application/pdf"
                             onChange={docUpload.handleFileSelect(2)} />
                         </div>
                       </div>
