@@ -1,4 +1,5 @@
 import { ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import PageTitle from "@/components/PageTitle";
 import AnimatedSection from "@/components/AnimatedSection";
 
@@ -48,26 +49,37 @@ const Servicos = () => (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {services.map((service, i) => (
             <AnimatedSection key={service.title} delay={i * 0.15}>
-              <div className="bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition group">
-                <div className="relative overflow-hidden">
-                  <img src={service.image} alt={service.title} className="w-full h-56 object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
-                  <div className="absolute inset-0 bg-dark-gray/0 group-hover:bg-dark-gray/40 transition flex items-center justify-center">
-                    {service.external ? (
-                      <a href={service.link} target="_blank" rel="noreferrer" className="w-14 h-14 rounded-full border-2 border-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-                        <ArrowRight size={20} className="text-white" />
-                      </a>
-                    ) : (
+              {service.external ? (
+                <a href={service.link} target="_blank" rel="noreferrer" className="block bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition group">
+                  <div className="relative overflow-hidden">
+                    <img src={service.image} alt={service.title} className="w-full h-56 object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                    <div className="absolute inset-0 bg-dark-gray/0 group-hover:bg-dark-gray/40 transition flex items-center justify-center">
                       <div className="w-14 h-14 rounded-full border-2 border-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
                         <ArrowRight size={20} className="text-white" />
                       </div>
-                    )}
+                    </div>
                   </div>
-                </div>
-                <div className="p-8 text-center">
-                  <h4 className="font-alt font-medium text-dark-gray text-lg mb-2">{service.title}</h4>
-                  <p className="text-medium-gray text-sm">{service.desc}</p>
-                </div>
-              </div>
+                  <div className="p-8 text-center">
+                    <h4 className="font-alt font-medium text-dark-gray text-lg mb-2">{service.title}</h4>
+                    <p className="text-medium-gray text-sm">{service.desc}</p>
+                  </div>
+                </a>
+              ) : (
+                <Link to={service.link} className="block bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition group">
+                  <div className="relative overflow-hidden">
+                    <img src={service.image} alt={service.title} className="w-full h-56 object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                    <div className="absolute inset-0 bg-dark-gray/0 group-hover:bg-dark-gray/40 transition flex items-center justify-center">
+                      <div className="w-14 h-14 rounded-full border-2 border-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                        <ArrowRight size={20} className="text-white" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-8 text-center">
+                    <h4 className="font-alt font-medium text-dark-gray text-lg mb-2">{service.title}</h4>
+                    <p className="text-medium-gray text-sm">{service.desc}</p>
+                  </div>
+                </Link>
+              )}
             </AnimatedSection>
           ))}
         </div>

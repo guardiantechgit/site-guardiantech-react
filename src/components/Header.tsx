@@ -54,7 +54,7 @@ const Header = () => {
               </div>
             </div>
             <Link to="/clientes" className={`font-alt text-[17px] hover:opacity-70 transition ${textColor}`}>Clientes</Link>
-            <a href="https://plataforma.guardiantech.site" target="_blank" rel="noreferrer" className={`font-alt text-[17px] hover:opacity-70 transition ${textColor}`}>Plataforma</a>
+            <a href="/plataforma/" target="_blank" rel="noreferrer" className={`font-alt text-[17px] hover:opacity-70 transition ${textColor}`}>Plataforma</a>
           </nav>
 
           <div className="hidden lg:flex items-center gap-4">
@@ -99,7 +99,7 @@ const Header = () => {
               </div>
             )}
             <Link to="/clientes" className="font-alt text-dark-gray py-2 text-[17px]">Clientes</Link>
-            <a href="https://plataforma.guardiantech.site" target="_blank" rel="noreferrer" className="font-alt text-dark-gray py-2 text-[17px]">Plataforma</a>
+            <a href="/plataforma/" target="_blank" rel="noreferrer" className="font-alt text-dark-gray py-2 text-[17px]">Plataforma</a>
             <a href="tel:5519999722280" className="text-base-color font-medium py-2">(19) 99972-2280</a>
           </nav>
         </div>
