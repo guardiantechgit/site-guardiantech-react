@@ -5,7 +5,7 @@ import { ShieldCheck, Hourglass, Award, Briefcase, ArrowRight, MapPin, Shield, E
 import VideoModal from "@/components/VideoModal";
 import AnimatedSection from "@/components/AnimatedSection";
 import ClientsCarousel from "@/components/ClientsCarousel";
-import InstagramFeed from "@/components/InstagramFeed";
+
 
 const slides = [
   {
@@ -357,8 +357,6 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Instagram Feed */}
-      <InstagramFeed />
 
       {/* Clients */}
       <ClientsCarousel />
