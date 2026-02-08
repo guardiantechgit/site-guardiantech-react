@@ -59,28 +59,8 @@ serve(async (req: Request) => {
 
     const { nome, telefone, email, mensagem, recaptchaToken } = await req.json();
 
-    // Verify reCAPTCHA
-    if (!recaptchaToken) {
-      return new Response(JSON.stringify({ error: "CAPTCHA não enviado." }), {
-        status: 400,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
-    }
-
-    const captchaRes = await fetch("https://www.google.com/recaptcha/api/siteverify", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: `secret=${RECAPTCHA_SECRET}&response=${recaptchaToken}`,
-    });
-    const captchaData = await captchaRes.json();
-
-    if (!captchaData.success || (captchaData.score !== undefined && captchaData.score < 0.5)) {
-      console.log("reCAPTCHA failed:", captchaData);
-      return new Response(JSON.stringify({ error: "Verificação CAPTCHA falhou. Tente novamente." }), {
-        status: 403,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
-    }
+    // reCAPTCHA verification TEMPORARILY DISABLED
+    // TODO: Re-enable when using production domain
 
     // Server-side input validation
     if (!nome || typeof nome !== "string" || !nome.trim()) {
@@ -120,7 +100,7 @@ serve(async (req: Request) => {
     <tr><td style="padding:8px 12px 8px 0;color:#888;font-size:13px;white-space:nowrap;vertical-align:top;">Mensagem</td><td style="padding:8px 0;font-size:13px;white-space:pre-wrap;">${escapeHtml(mensagem)}</td></tr>
   </table>
   <hr style="margin:24px 0;border:none;border-top:1px solid #eee;" />
-  <p style="font-size:11px;color:#aaa;text-align:center;">reCAPTCHA score: ${captchaData.score ?? "N/A"}</p>
+  <p style="font-size:11px;color:#aaa;text-align:center;">reCAPTCHA: desativado temporariamente</p>
   <p style="font-size:11px;color:#aaa;text-align:center;">Enviado automaticamente pelo site — GuardianTech</p>
 </body>
 </html>`;

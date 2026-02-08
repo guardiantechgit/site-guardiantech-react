@@ -8,7 +8,7 @@ import { findCoupon, type Coupon } from "@/lib/coupons";
 import { computeQuote, type QuoteResult } from "@/lib/quoteCalculator";
 import { lookupViaCep } from "@/lib/viaCep";
 import { useDocumentUpload } from "@/hooks/useDocumentUpload";
-import { useRecaptcha } from "@/hooks/useRecaptcha";
+// import { useRecaptcha } from "@/hooks/useRecaptcha"; // TEMPORARILY DISABLED
 import { supabase } from "@/integrations/supabase/client";
 
 // ── Types ──
@@ -301,7 +301,7 @@ const ContrateFisica = () => {
 
   // Document upload
   const docUpload = useDocumentUpload();
-  const { getToken } = useRecaptcha();
+  // const { getToken } = useRecaptcha(); // TEMPORARILY DISABLED
 
   // Quote
   const quote: QuoteResult = computeQuote(form.vehicleType, form.remoteBlocking, couponApplied);
@@ -513,15 +513,8 @@ const ContrateFisica = () => {
     setSubmitting(true);
 
     try {
-      // Get reCAPTCHA token
-      let recaptchaToken = "";
-      try {
-        recaptchaToken = await getToken("hire_form");
-      } catch {
-        showAlert("danger", "Erro na verificação CAPTCHA. Recarregue a página e tente novamente.");
-        setSubmitting(false);
-        return;
-      }
+      // reCAPTCHA TEMPORARILY DISABLED
+      const recaptchaToken = "";
 
       // Collect metadata
       let ipAddress = "";

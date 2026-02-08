@@ -8,7 +8,7 @@ import { findCoupon, type Coupon } from "@/lib/coupons";
 import { computeQuote, type QuoteResult } from "@/lib/quoteCalculator";
 import { lookupViaCep } from "@/lib/viaCep";
 import { useDocumentUpload } from "@/hooks/useDocumentUpload";
-import { useRecaptcha } from "@/hooks/useRecaptcha";
+// import { useRecaptcha } from "@/hooks/useRecaptcha"; // TEMPORARILY DISABLED
 import { supabase } from "@/integrations/supabase/client";
 
 // ── Types ──
@@ -291,7 +291,7 @@ const ContrateJuridica = () => {
 
   // Document upload (only 1 doc for PJ)
   const docUpload = useDocumentUpload();
-  const { getToken } = useRecaptcha();
+  // const { getToken } = useRecaptcha(); // TEMPORARILY DISABLED
 
   // Quote
   const quote: QuoteResult = computeQuote(form.vehicleType, form.remoteBlocking, couponApplied);
@@ -452,9 +452,8 @@ const ContrateJuridica = () => {
     setSubmitting(true);
 
     try {
-      let recaptchaToken = "";
-      try { recaptchaToken = await getToken("hire_form_pj"); }
-      catch { showAlert("danger", "Erro na verificação CAPTCHA. Recarregue a página."); setSubmitting(false); return; }
+      // reCAPTCHA TEMPORARILY DISABLED
+      const recaptchaToken = "";
 
       let ipAddress = "";
       try { const r = await fetch("https://api64.ipify.org?format=json"); const d = await r.json(); ipAddress = d.ip || ""; }
