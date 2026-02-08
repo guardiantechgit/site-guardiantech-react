@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShieldCheck, Hourglass, Award, Briefcase, ArrowRight, MapPin, Shield, Eye, Play, Star } from "lucide-react";
 import AnimatedSection from "@/components/AnimatedSection";
+import ClientsCarousel from "@/components/ClientsCarousel";
 
 const slides = [
   {
@@ -362,6 +363,9 @@ const Home = () => {
           </h4>
         </div>
       </section>
+
+      {/* Clients */}
+      <ClientsCarousel />
     </main>
   );
 };

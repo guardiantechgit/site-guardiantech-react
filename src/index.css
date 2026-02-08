@@ -1,5 +1,5 @@
-@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Sora:wght@100;200;300;400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@100;300;400;500;600;700;800&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -7,46 +7,54 @@
 
 @layer base {
   :root {
-    --font-alt: "Plus Jakarta Sans", sans-serif;
-    --font-primary: "Inter", sans-serif;
+    --font-alt: "Sora", sans-serif;
+    --font-primary: "Be Vietnam Pro", sans-serif;
 
-    --base-color: 228 90% 55%;
+    /* #AF985A = hsl(44, 35%, 52%) */
+    --base-color: 44 35% 52%;
     --background: 0 0% 100%;
-    --foreground: 0 0% 13%;
+    /* #33322f */
+    --foreground: 40 3% 19%;
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 13%;
+    --card-foreground: 40 3% 19%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 13%;
+    --popover-foreground: 40 3% 19%;
 
-    --primary: 228 90% 55%;
+    --primary: 44 35% 52%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 210 40% 96.1%;
-    --secondary-foreground: 0 0% 13%;
+    --secondary-foreground: 40 3% 19%;
 
     --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted-foreground: 220 7% 56%;
 
     --accent: 210 40% 96.1%;
-    --accent-foreground: 0 0% 13%;
+    --accent-foreground: 40 3% 19%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 228 90% 55%;
+    --ring: 44 35% 52%;
 
     --radius: 0.5rem;
 
-    --dark-gray: 0 0% 13%;
-    --medium-gray: 225 4% 47%;
+    /* #33322f */
+    --dark-gray: 40 3% 19%;
+    /* #868d98 */
+    --medium-gray: 218 8% 56%;
     --extra-medium-gray: 0 0% 89%;
+    /* #f0f4fd */
     --solitude-blue: 222 78% 96%;
-    --slate-blue: 33 7% 19%;
+    /* #33322f */
+    --slate-blue: 40 3% 19%;
+    /* #23262d */
     --extra-medium-slate-blue: 220 12% 16%;
+    /* #1f232c */
     --dark-slate-blue: 222 18% 15%;
 
     --sidebar-background: 0 0% 98%;
@@ -67,13 +75,15 @@
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-primary);
+    font-size: 17px;
+    line-height: 32px;
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-alt);
+    margin-bottom: 25px;
   }
 }
 
-/* Smooth scroll */
 html {
   scroll-behavior: smooth;
 }

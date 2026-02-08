@@ -14,8 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        alt: ["Plus Jakarta Sans", "sans-serif"],
-        primary: ["Inter", "sans-serif"],
+        alt: ["Sora", "sans-serif"],
+        primary: ["Be Vietnam Pro", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
