@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight, Play } from "lucide-react";
 import PageTitle from "@/components/PageTitle";
 import AnimatedSection from "@/components/AnimatedSection";
+import ClientsCarousel from "@/components/ClientsCarousel";
 
 const timeline = [
   { year: "2006", title: "Começando a carreira", desc: "Um dos fundadores começa a trabalhar no ramo da tecnologia." },
@@ -97,6 +98,9 @@ const Sobre = () => {
           </div>
         </div>
       </section>
+
+      {/* Clients Carousel */}
+      <ClientsCarousel />
     </main>
   );
 };

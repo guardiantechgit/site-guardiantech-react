@@ -7,8 +7,8 @@ const services = [
     image: "/images/service-title-rastreamento.jpg",
     title: "Rastreamento Veicular",
     desc: "Monitore seus veículos em tempo real com o melhor serviço de rastreamento do mercado.",
-    link: "https://www.youtube.com/watch?v=14xXieeVy3c&ab_channel=GuardianTech",
-    external: true,
+    link: "/rastreamento",
+    external: false,
   },
   {
     image: "/images/service-title-acesso.jpg",
