@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { CheckCircle2, Loader2, XCircle } from "lucide-react";
 
 export interface SubmissionStep {
@@ -13,6 +14,16 @@ interface SubmissionProgressProps {
 }
 
 const SubmissionProgress = ({ steps, visible }: SubmissionProgressProps) => {
+  useEffect(() => {
+    if (visible) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [visible]);
+
   if (!visible) return null;
 
   const doneCount = steps.filter((s) => s.status === "done").length;
@@ -20,7 +31,7 @@ const SubmissionProgress = ({ steps, visible }: SubmissionProgressProps) => {
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4">
+      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 animate-in fade-in zoom-in-95 duration-300">
         <h5 className="font-alt text-dark-gray font-bold text-lg mb-2">Enviando formulário</h5>
         <p className="text-medium-gray text-xs mb-5">Aguarde enquanto processamos seus dados...</p>
 

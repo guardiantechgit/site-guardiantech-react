@@ -125,31 +125,35 @@ serve(async (req: Request) => {
     ]) {
       if (!doc.url) continue;
       try {
-        const pathMatch = doc.url.match(/\/documents\/(.+)$/);
+        // Extract the file path - handle both "documents/UUID.ext" and full URL formats
+        let filePath = doc.url;
+        const pathMatch = doc.url.match(/(?:\/)?documents\/(.+)$/);
         if (pathMatch) {
-          const { data, error } = await supabase.storage
-            .from("documents")
-            .download(pathMatch[1]);
-          if (data && !error) {
-            // Validate file size (10MB max)
-            if (data.size > 10 * 1024 * 1024) {
-              console.warn("Attachment too large, skipping:", doc.name);
-              continue;
-            }
-            // Validate file type
-            if (!ALLOWED_DOC_TYPES.includes(data.type)) {
-              console.warn("Invalid file type, skipping:", doc.name, data.type);
-              continue;
-            }
-            const arrayBuf = await data.arrayBuffer();
-            const base64 = btoa(
-              new Uint8Array(arrayBuf).reduce((s, b) => s + String.fromCharCode(b), "")
-            );
-            attachments.push({
-              filename: doc.name || "documento",
-              content: base64,
-            });
+          filePath = pathMatch[1];
+        }
+        console.log("Downloading attachment:", filePath, "from bucket: documents");
+        const { data, error } = await supabase.storage
+          .from("documents")
+          .download(filePath);
+        if (error) {
+          console.error("Storage download error:", error);
+          continue;
+        }
+        if (data) {
+          // Validate file size (10MB max)
+          if (data.size > 10 * 1024 * 1024) {
+            console.warn("Attachment too large, skipping:", doc.name);
+            continue;
           }
+          const arrayBuf = await data.arrayBuffer();
+          const base64 = btoa(
+            new Uint8Array(arrayBuf).reduce((s, b) => s + String.fromCharCode(b), "")
+          );
+          attachments.push({
+            filename: doc.name || "documento",
+            content: base64,
+          });
+          console.log("Attachment added:", doc.name, "size:", data.size);
         }
       } catch (e) {
         console.error("Error downloading attachment:", e);
