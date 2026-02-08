@@ -1,3 +1,5 @@
+import { supabase } from "@/integrations/supabase/client";
+
 export interface Coupon {
   code: string;
   install_discount_enabled: boolean;
@@ -8,74 +10,26 @@ export interface Coupon {
   monthly_discount_value: number;
 }
 
-export const GT_COUPONS: Coupon[] = [
-  {
-    code: "WESLAO",
-    install_discount_enabled: true,
-    install_discount_mode: "percent",
-    install_discount_value: 10,
-    monthly_discount_enabled: false,
-    monthly_discount_mode: "percent",
-    monthly_discount_value: 0,
-  },
-  {
-    code: "TRIPZERO19",
-    install_discount_enabled: true,
-    install_discount_mode: "percent",
-    install_discount_value: 10,
-    monthly_discount_enabled: false,
-    monthly_discount_mode: "percent",
-    monthly_discount_value: 0,
-  },
-  {
-    code: "DEMATEI",
-    install_discount_enabled: true,
-    install_discount_mode: "percent",
-    install_discount_value: 10,
-    monthly_discount_enabled: false,
-    monthly_discount_mode: "percent",
-    monthly_discount_value: 0,
-  },
-  {
-    code: "GARAGE62",
-    install_discount_enabled: true,
-    install_discount_mode: "percent",
-    install_discount_value: 10,
-    monthly_discount_enabled: false,
-    monthly_discount_mode: "percent",
-    monthly_discount_value: 0,
-  },
-  {
-    code: "MARCELINHO",
-    install_discount_enabled: true,
-    install_discount_mode: "percent",
-    install_discount_value: 10,
-    monthly_discount_enabled: false,
-    monthly_discount_mode: "percent",
-    monthly_discount_value: 0,
-  },
-  {
-    code: "NEICRAVEIRO",
-    install_discount_enabled: true,
-    install_discount_mode: "percent",
-    install_discount_value: 10,
-    monthly_discount_enabled: false,
-    monthly_discount_mode: "percent",
-    monthly_discount_value: 0,
-  },
-  {
-    code: "EDSON",
-    install_discount_enabled: true,
-    install_discount_mode: "percent",
-    install_discount_value: 10,
-    monthly_discount_enabled: false,
-    monthly_discount_mode: "percent",
-    monthly_discount_value: 0,
-  },
-];
-
-export function findCoupon(rawCode: string): Coupon | null {
+export async function findCoupon(rawCode: string): Promise<Coupon | null> {
   const code = (rawCode || "").trim().toUpperCase();
   if (!code) return null;
-  return GT_COUPONS.find((c) => c.code.toUpperCase() === code) || null;
+
+  const { data } = await supabase
+    .from("coupons")
+    .select("*")
+    .eq("code", code)
+    .eq("active", true)
+    .maybeSingle();
+
+  if (!data) return null;
+
+  return {
+    code: data.code,
+    install_discount_enabled: data.install_discount_enabled,
+    install_discount_mode: data.install_discount_mode as "percent" | "value",
+    install_discount_value: data.install_discount_value,
+    monthly_discount_enabled: data.monthly_discount_enabled,
+    monthly_discount_mode: data.monthly_discount_mode as "percent" | "value",
+    monthly_discount_value: data.monthly_discount_value,
+  };
 }

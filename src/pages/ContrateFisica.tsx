@@ -210,14 +210,14 @@ const ContrateFisica = () => {
   };
 
   // ── Coupon ──
-  const handleApplyCoupon = () => {
+  const handleApplyCoupon = async () => {
     setCouponAlert(null);
     const raw = couponInput.trim();
     if (!raw) {
       setCouponAlert({ type: "warning", text: "Digite um cupom para aplicar." });
       return;
     }
-    const found = findCoupon(raw);
+    const found = await findCoupon(raw);
     if (found) {
       setCouponApplied(found);
       setCouponAlert({ type: "success", text: `Cupom <strong>${found.code}</strong> válido.` });
