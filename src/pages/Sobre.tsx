@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, Play } from "lucide-react";
+import VideoModal from "@/components/VideoModal";
 import PageTitle from "@/components/PageTitle";
 import AnimatedSection from "@/components/AnimatedSection";
 import ClientsCarousel from "@/components/ClientsCarousel";
@@ -27,15 +28,12 @@ const Sobre = () => {
             <AnimatedSection>
               <div className="relative">
                 <img src="/images/bar-about.jpg" alt="GuardianTech" className="rounded-lg w-full" loading="lazy" />
-                <a
-                  href="https://www.youtube.com/watch?v=RWWOdX-rn2E"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 lg:left-auto lg:-translate-x-0 lg:-right-8 w-16 h-16 bg-white rounded-full shadow-xl flex items-center justify-center hover:scale-110 transition group"
-                >
-                  <Play size={20} className="text-base-color ml-1" />
-                  <span className="absolute w-20 h-20 rounded-full border-2 border-base-color animate-ping opacity-30" />
-                </a>
+                <VideoModal videoUrl="https://www.youtube.com/watch?v=RWWOdX-rn2E">
+                  <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 lg:left-auto lg:-translate-x-0 lg:-right-8 w-16 h-16 bg-white rounded-full shadow-xl flex items-center justify-center hover:scale-110 transition group">
+                    <Play size={20} className="text-base-color ml-1" />
+                    <span className="absolute w-20 h-20 rounded-full border-2 border-base-color animate-ping opacity-30" />
+                  </span>
+                </VideoModal>
               </div>
             </AnimatedSection>
 
