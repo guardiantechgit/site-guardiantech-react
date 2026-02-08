@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Car, Smartphone, Signal, CheckCircle, User, Briefcase, MessageCircle, ChevronDown } from "lucide-react";
 import AnimatedSection from "@/components/AnimatedSection";
 import VideoModal from "@/components/VideoModal";
+import PageSEO from "@/components/PageSEO";
 
 const plans = [
   {
@@ -45,6 +46,12 @@ const LandingRastreamento = () => {
 
   return (
     <main>
+      <PageSEO
+        title="Rastreamento Veicular - GuardianTech"
+        description="Rastreie e proteja seus veículos em tempo real com a GuardianTech. Planos acessíveis para carros, motos, caminhões, tratores e embarcações."
+        ogImage="/images/title-landingr.jpg"
+        path="/rastreamento"
+      />
       {/* Hero */}
       <section
         className="relative min-h-[60vh] flex items-center justify-center bg-cover bg-center"

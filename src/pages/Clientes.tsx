@@ -1,5 +1,6 @@
 import PageTitle from "@/components/PageTitle";
 import AnimatedSection from "@/components/AnimatedSection";
+import PageSEO from "@/components/PageSEO";
 
 const clients = [
   "cliente-vencomatic.png",
@@ -22,6 +23,12 @@ const clients = [
 
 const Clientes = () => (
   <main>
+    <PageSEO
+      title="Clientes - GuardianTech"
+      description="Conheça as empresas que confiam na GuardianTech para soluções de segurança, tecnologia e rastreamento veicular."
+      ogImage="/images/title-clientes.jpg"
+      path="/clientes"
+    />
     <PageTitle title="Nossos clientes" backgroundImage="/images/title-clientes.jpg" />
 
     <section id="down-section" className="py-16">

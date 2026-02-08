@@ -13,6 +13,7 @@ import { useGeolocation } from "@/hooks/useGeolocation";
 import SubmissionProgress, { type SubmissionStep } from "@/components/SubmissionProgress";
 // import { useRecaptcha } from "@/hooks/useRecaptcha"; // TEMPORARILY DISABLED
 import { supabase } from "@/integrations/supabase/client";
+import PageSEO from "@/components/PageSEO";
 
 // ── Types ──
 interface FormData {
@@ -796,6 +797,12 @@ const ContrateFisica = () => {
 
   return (
     <main>
+      <PageSEO
+        title="Contrate Pessoa Física - GuardianTech"
+        description="Contrate o rastreamento veicular da GuardianTech para pessoa física. Preencha o formulário e proteja seu veículo."
+        ogImage="/images/title-landingr.jpg"
+        path="/contrate-fisica"
+      />
       <SubmissionProgress steps={progressSteps} visible={showProgress} />
       <PageTitle title="Contrate agora" backgroundImage="/images/title-contato.jpg" />
 

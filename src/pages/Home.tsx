@@ -5,6 +5,7 @@ import { ShieldCheck, Hourglass, Award, Briefcase, ArrowRight, MapPin, Shield, E
 import VideoModal from "@/components/VideoModal";
 import AnimatedSection from "@/components/AnimatedSection";
 import ClientsCarousel from "@/components/ClientsCarousel";
+import PageSEO from "@/components/PageSEO";
 
 
 const slides = [
@@ -120,6 +121,12 @@ const Home = () => {
 
   return (
     <main>
+      <PageSEO
+        title="GuardianTech - Segurança, Tecnologia e Rastreamento"
+        description="Especializada em rastreamento veicular e segurança eletrônica, a GuardianTech protege seu patrimônio com tecnologia de ponta para carros, motos, caminhões, cargas, barcos e tratores."
+        ogImage="/images/og-index.jpg"
+        path="/"
+      />
       {/* Hero Slider */}
       <section className="relative h-screen md:h-[600px] sm:h-[500px] bg-dark-gray overflow-hidden">
         <AnimatePresence mode="wait">
