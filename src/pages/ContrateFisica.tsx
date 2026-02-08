@@ -94,6 +94,178 @@ const MAX_DAYS_OPTIONS = [
   { value: "Mais de 10 dias", label: "Mais de 10 dias" },
 ];
 
+function parseUserAgent(ua: string): string {
+  let browser = "Navegador desconhecido";
+  let browserVersion = "";
+  let os = "SO desconhecido";
+
+  // Browser + version
+  const edgMatch = ua.match(/Edg\/(\d+[\d.]*)/);
+  const ffMatch = ua.match(/Firefox\/(\d+[\d.]*)/);
+  const chromeMatch = ua.match(/Chrome\/(\d+[\d.]*)/);
+  const safariMatch = ua.match(/Version\/(\d+[\d.]*).*Safari/);
+  const operaMatch = ua.match(/OPR\/(\d+[\d.]*)/);
+
+  if (operaMatch) { browser = "Opera"; browserVersion = operaMatch[1]; }
+  else if (edgMatch) { browser = "Edge"; browserVersion = edgMatch[1]; }
+  else if (ffMatch) { browser = "Firefox"; browserVersion = ffMatch[1]; }
+  else if (chromeMatch) { browser = "Chrome"; browserVersion = chromeMatch[1]; }
+  else if (safariMatch) { browser = "Safari"; browserVersion = safariMatch[1]; }
+
+  // OS + version
+  const winMatch = ua.match(/Windows NT (\d+\.\d+)/);
+  const macMatch = ua.match(/Mac OS X (\d+[._]\d+[._]?\d*)/);
+  const androidMatch = ua.match(/Android (\d+[\d.]*)/);
+  const iosMatch = ua.match(/(?:iPhone|iPad) OS (\d+[_]\d+)/);
+  const linuxMatch = ua.includes("Linux");
+
+  if (winMatch) {
+    const ver = winMatch[1];
+    const winNames: Record<string, string> = { "10.0": "10/11", "6.3": "8.1", "6.2": "8", "6.1": "7" };
+    os = `Windows ${winNames[ver] || ver}`;
+  } else if (macMatch) {
+    os = `macOS ${macMatch[1].replace(/_/g, ".")}`;
+  } else if (androidMatch) {
+    os = `Android ${androidMatch[1]}`;
+  } else if (iosMatch) {
+    os = `iOS ${iosMatch[1].replace(/_/g, ".")}`;
+  } else if (linuxMatch) {
+    os = "Linux";
+  }
+
+  const bv = browserVersion ? ` ${browserVersion.split(".")[0]}` : "";
+  return `${browser}${bv} / ${os}`;
+}
+
+// DocSlot component for document upload
+interface DocSlotProps {
+  label: string;
+  doc: { file: File; previewUrl: string } | null;
+  inputRef: React.RefObject<HTMLInputElement>;
+  onSelect: () => void;
+  onRemove: () => void;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  altText: string;
+}
+
+function truncateFileName(name: string, maxLen = 28): string {
+  if (name.length <= maxLen) return name;
+  const ext = name.lastIndexOf(".");
+  if (ext === -1) return name.slice(0, maxLen - 3) + "...";
+  const extension = name.slice(ext);
+  const base = name.slice(0, ext);
+  const keep = maxLen - extension.length - 3;
+  if (keep <= 0) return "..." + extension;
+  return base.slice(0, keep) + "..." + extension;
+}
+
+function bytesToHuman(bytes: number): string {
+  if (bytes < 1024) return bytes + " B";
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1).replace(".", ",") + " KB";
+  return (bytes / (1024 * 1024)).toFixed(1).replace(".", ",") + " MB";
+}
+
+function isPdfFile(file: File): boolean {
+  const ext = file.name.toLowerCase().match(/\.([a-z0-9]+)$/);
+  return (ext?.[1] === "pdf") || file.type === "application/pdf";
+}
+
+function isHeicFile(file: File): boolean {
+  const ext = file.name.toLowerCase().match(/\.([a-z0-9]+)$/);
+  return ext?.[1] === "heic" || ext?.[1] === "heif";
+}
+
+const DocSlot = ({ label, doc, inputRef, onSelect, onRemove, onChange, altText }: DocSlotProps) => (
+  <div className="flex flex-col">
+    <button type="button" onClick={onSelect}
+      className="bg-base-color text-white px-4 py-2 rounded-full text-sm font-medium shadow hover:opacity-90 transition self-start">
+      {label}
+    </button>
+    {doc ? (
+      <div className="mt-3 border border-extra-medium-gray rounded-lg overflow-hidden">
+        {/* File info bar */}
+        <div className="flex items-center justify-between gap-2 px-3 py-2 bg-muted">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-base-color/10 text-base-color">
+              {doc.file.name.split(".").pop()?.toUpperCase()}
+            </span>
+            <span className="text-xs text-foreground truncate" title={doc.file.name}>
+              {truncateFileName(doc.file.name)}
+            </span>
+            <span className="text-[10px] text-medium-gray whitespace-nowrap">({bytesToHuman(doc.file.size)})</span>
+          </div>
+          <button type="button" onClick={onRemove}
+            className="text-xs text-destructive hover:text-destructive/80 font-medium whitespace-nowrap transition">
+            Remover
+          </button>
+        </div>
+        {/* Preview */}
+        <div className="bg-muted/30">
+          {isPdfFile(doc.file) ? (
+            <div className="flex flex-col items-center justify-center py-6 gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-red-500"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M10 12a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v0a1 1 0 0 0-1-1h-1z"/></svg>
+              <span className="text-sm font-medium text-foreground">Documento PDF</span>
+              <a href={doc.previewUrl} target="_blank" rel="noopener noreferrer"
+                className="text-xs text-base-color hover:underline font-medium">
+                Visualizar arquivo ↗
+              </a>
+            </div>
+          ) : isHeicFile(doc.file) ? (
+            <div className="flex flex-col items-center justify-center py-6 gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+              <span className="text-sm font-medium text-foreground">Imagem HEIC/HEIF</span>
+              <span className="text-xs text-medium-gray">Prévia não disponível para este formato</span>
+            </div>
+          ) : (
+            <img src={doc.previewUrl} alt={altText} className="w-full max-h-56 object-contain" />
+          )}
+        </div>
+      </div>
+    ) : (
+      <div className="mt-3 border border-dashed border-extra-medium-gray rounded-lg flex items-center justify-center h-32 cursor-pointer hover:border-base-color/50 transition"
+        onClick={onSelect}>
+        <span className="text-sm text-medium-gray">Nenhum arquivo selecionado</span>
+      </div>
+    )}
+    <input ref={inputRef} type="file" className="hidden"
+      accept="image/jpeg,image/png,image/webp,image/heic,image/heif,image/gif,application/pdf"
+      onChange={onChange} />
+  </div>
+);
+
+// Collected data footer with real IP fetch
+const CollectedDataFooter = () => {
+  const [ip, setIp] = useState("Carregando...");
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("https://api64.ipify.org?format=json");
+        const data = await res.json();
+        if (!cancelled) setIp(data.ip || "Indisponível");
+      } catch {
+        try {
+          const res2 = await fetch("https://ipinfo.io/json");
+          const data2 = await res2.json();
+          if (!cancelled) setIp(data2.ip || "Indisponível");
+        } catch {
+          if (!cancelled) setIp("Indisponível");
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  return (
+    <div className="md:col-span-2 mt-2">
+      <small className="block text-medium-gray text-xs leading-relaxed">
+        <strong>Dados coletados:</strong>{" "}
+        IP: {ip} — Navegador/SO: {parseUserAgent(navigator.userAgent)} — Data/Hora: {new Date().toLocaleString("pt-BR")}
+      </small>
+    </div>
+  );
+};
+
 const ContrateFisica = () => {
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState<FormData>(initialForm);
@@ -342,27 +514,19 @@ const ContrateFisica = () => {
       // Collect metadata
       let ipAddress = "";
       try {
-        const ipRes = await fetch("https://api.ipify.org?format=json");
+        const ipRes = await fetch("https://api64.ipify.org?format=json");
         const ipData = await ipRes.json();
         ipAddress = ipData.ip || "";
-      } catch { /* ignore */ }
+      } catch {
+        try {
+          const ipRes2 = await fetch("https://ipinfo.io/json");
+          const ipData2 = await ipRes2.json();
+          ipAddress = ipData2.ip || "";
+        } catch { /* ignore */ }
+      }
 
       const userAgent = navigator.userAgent;
-      const uaFriendly = (() => {
-        const ua = navigator.userAgent;
-        let browser = "Navegador desconhecido";
-        let os = "SO desconhecido";
-        if (ua.includes("Firefox/")) browser = "Firefox";
-        else if (ua.includes("Edg/")) browser = "Edge";
-        else if (ua.includes("Chrome/")) browser = "Chrome";
-        else if (ua.includes("Safari/")) browser = "Safari";
-        if (ua.includes("Windows")) os = "Windows";
-        else if (ua.includes("Mac OS")) os = "macOS";
-        else if (ua.includes("Android")) os = "Android";
-        else if (ua.includes("iPhone") || ua.includes("iPad")) os = "iOS";
-        else if (ua.includes("Linux")) os = "Linux";
-        return `${browser} — ${os}`;
-      })();
+      const uaFriendly = parseUserAgent(navigator.userAgent);
 
       let geolocation = "";
       try {
@@ -625,71 +789,29 @@ const ContrateFisica = () => {
                     <div className="border border-extra-medium-gray rounded-lg p-5">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Frente */}
-                        <div>
-                          <button type="button" onClick={() => docUpload.inputRef1.current?.click()}
-                            className="bg-base-color text-white px-4 py-2 rounded-full text-sm font-medium shadow hover:opacity-90 transition">
-                            Selecionar frente (ou arquivo único)
-                          </button>
-                          <small className="block mt-2 text-medium-gray">
-                            {docUpload.doc1
-                              ? `${docUpload.doc1.file.name} (${docUpload.bytesToHuman(docUpload.doc1.file.size)})`
-                              : "Nenhum arquivo selecionado."}
-                          </small>
-                          {docUpload.doc1 && (
-                            <div className="relative mt-3">
-                              <button type="button" onClick={docUpload.removeFile(1)}
-                                className="absolute top-2 right-2 bg-dark-gray text-white text-xs px-3 py-1 rounded z-10">
-                                Remover
-                              </button>
-                              {docUpload.isPdf(docUpload.doc1.file) || docUpload.isHeic(docUpload.doc1.file) ? (
-                                <div className="border rounded p-3">
-                                  <p className="font-semibold text-sm">{docUpload.isPdf(docUpload.doc1.file) ? "Arquivo PDF" : "Arquivo HEIC/HEIF"}</p>
-                                  <a href={docUpload.doc1.previewUrl} target="_blank" rel="noopener noreferrer" className="text-sm underline mt-2 inline-block">Abrir arquivo</a>
-                                </div>
-                              ) : (
-                                <img src={docUpload.doc1.previewUrl} alt="Prévia do documento" className="max-w-full rounded" />
-                              )}
-                            </div>
-                          )}
-                          <input ref={docUpload.inputRef1} type="file" className="hidden"
-                            accept="image/jpeg,image/png,image/webp,image/heic,image/heif,image/gif,application/pdf"
-                            onChange={docUpload.handleFileSelect(1)} />
-                        </div>
+                        <DocSlot
+                          label="Selecionar frente (ou arquivo único)"
+                          doc={docUpload.doc1}
+                          inputRef={docUpload.inputRef1}
+                          onSelect={() => docUpload.inputRef1.current?.click()}
+                          onRemove={docUpload.removeFile(1)}
+                          onChange={docUpload.handleFileSelect(1)}
+                          altText="Prévia do documento"
+                        />
                         {/* Verso */}
-                        <div>
-                          <button type="button" onClick={() => docUpload.inputRef2.current?.click()}
-                            className="bg-base-color text-white px-4 py-2 rounded-full text-sm font-medium shadow hover:opacity-90 transition">
-                            Selecionar verso (opcional)
-                          </button>
-                          <small className="block mt-2 text-medium-gray">
-                            {docUpload.doc2
-                              ? `${docUpload.doc2.file.name} (${docUpload.bytesToHuman(docUpload.doc2.file.size)})`
-                              : "Nenhum arquivo selecionado."}
-                          </small>
-                          {docUpload.doc2 && (
-                            <div className="relative mt-3">
-                              <button type="button" onClick={docUpload.removeFile(2)}
-                                className="absolute top-2 right-2 bg-dark-gray text-white text-xs px-3 py-1 rounded z-10">
-                                Remover
-                              </button>
-                              {docUpload.isPdf(docUpload.doc2.file) || docUpload.isHeic(docUpload.doc2.file) ? (
-                                <div className="border rounded p-3">
-                                  <p className="font-semibold text-sm">{docUpload.isPdf(docUpload.doc2.file) ? "Arquivo PDF" : "Arquivo HEIC/HEIF"}</p>
-                                  <a href={docUpload.doc2.previewUrl} target="_blank" rel="noopener noreferrer" className="text-sm underline mt-2 inline-block">Abrir arquivo</a>
-                                </div>
-                              ) : (
-                                <img src={docUpload.doc2.previewUrl} alt="Prévia do verso" className="max-w-full rounded" />
-                              )}
-                            </div>
-                          )}
-                          <input ref={docUpload.inputRef2} type="file" className="hidden"
-                            accept="image/jpeg,image/png,image/webp,image/heic,image/heif,image/gif,application/pdf"
-                            onChange={docUpload.handleFileSelect(2)} />
-                        </div>
+                        <DocSlot
+                          label="Selecionar verso (opcional)"
+                          doc={docUpload.doc2}
+                          inputRef={docUpload.inputRef2}
+                          onSelect={() => docUpload.inputRef2.current?.click()}
+                          onRemove={docUpload.removeFile(2)}
+                          onChange={docUpload.handleFileSelect(2)}
+                          altText="Prévia do verso"
+                        />
                       </div>
                       <small className="block mt-3 text-medium-gray">
                         Envie a frente e o verso em <strong>um único arquivo</strong> ou em <strong>2 arquivos</strong>.<br />
-                        Formatos: JPG, PNG, WEBP, HEIC/HEIF ou PDF. Máx: 8 MB por arquivo, 16 MB no total.
+                        Formatos: JPG, PNG, WEBP, GIF, HEIC/HEIF ou PDF. Máx: 8 MB por arquivo, 16 MB no total.
                       </small>
                     </div>
                   </div>
@@ -1090,28 +1212,7 @@ const ContrateFisica = () => {
 
                   {/* ═══ SUBMIT ═══ */}
                   {/* Collected data display */}
-                  <div className="md:col-span-2 mt-2">
-                    <small className="block text-medium-gray text-xs leading-relaxed">
-                      <strong>Dados coletados:</strong>{" "}
-                      IP: <span id="gtCollectedIp">Carregando...</span> — 
-                      Navegador/SO: <span id="gtCollectedAgent">{(() => {
-                        const ua = navigator.userAgent;
-                        let browser = "Desconhecido";
-                        let os = "Desconhecido";
-                        if (ua.includes("Firefox/")) browser = "Firefox";
-                        else if (ua.includes("Edg/")) browser = "Edge";
-                        else if (ua.includes("Chrome/")) browser = "Chrome";
-                        else if (ua.includes("Safari/")) browser = "Safari";
-                        if (ua.includes("Windows")) os = "Windows";
-                        else if (ua.includes("Mac OS")) os = "macOS";
-                        else if (ua.includes("Android")) os = "Android";
-                        else if (ua.includes("iPhone") || ua.includes("iPad")) os = "iOS";
-                        else if (ua.includes("Linux")) os = "Linux";
-                        return `${browser} — ${os}`;
-                      })()}</span> — 
-                      Data/Hora: {new Date().toLocaleString("pt-BR")}
-                    </small>
-                  </div>
+                  <CollectedDataFooter />
 
                   <div className="md:col-span-2">
                     <div className="flex flex-col md:flex-row items-center justify-between gap-6 mt-4">
