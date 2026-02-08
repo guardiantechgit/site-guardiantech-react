@@ -226,19 +226,19 @@ const AdminCoupons = () => {
             {/* Representante */}
             <div className="border rounded-lg p-4 space-y-3">
               <span className="text-sm font-medium">Representante vinculado</span>
-              <Select value={form.representative_id} onValueChange={(v) => setForm({ ...form, representative_id: v })}>
+              <Select value={form.representative_id || "none"} onValueChange={(v) => setForm({ ...form, representative_id: v === "none" ? "" : v })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione um representante" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhum</SelectItem>
+                  <SelectItem value="none">Nenhum</SelectItem>
                   {reps.map(r => (
                     <SelectItem key={r.id} value={r.id}>{r.full_name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
-              {form.representative_id && (
+              {form.representative_id && form.representative_id !== "none" && (
                 <div className="flex gap-3">
                   <Select value={form.commission_mode} onValueChange={(v) => setForm({ ...form, commission_mode: v })}>
                     <SelectTrigger className="w-32">
