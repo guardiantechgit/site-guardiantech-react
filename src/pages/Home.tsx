@@ -11,9 +11,8 @@ const slides = [
     subtitle: "Tecnologia de ponta em",
     title: "Rastreamento de",
     highlight: "veículos.",
-    link: "https://www.youtube.com/watch?v=14xXieeVy3c&ab_channel=GuardianTech",
+    link: "/rastreamento",
     linkText: "Conheça o serviço",
-    num: "01",
   },
   {
     bg: "/images/background-seguranca.jpg",
@@ -22,7 +21,6 @@ const slides = [
     highlight: "condomínios.",
     link: "/servicos",
     linkText: "Conheça o serviço",
-    num: "02",
   },
 ];
 
@@ -42,8 +40,8 @@ const services = [
     title: "Rastreamento",
     titleSuffix: " de veículos em tempo real",
     desc: "Monitoramos seu veículo com a mais alta tecnologia, incluindo motocicletas, carros, caminhões, tratores, cargas e máquinas.",
-    link: "https://www.youtube.com/watch?v=14xXieeVy3c&ab_channel=GuardianTech",
-    external: true,
+    link: "/rastreamento",
+    external: false,
   },
   {
     id: "acesso",
@@ -140,24 +138,12 @@ const Home = () => {
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-alt leading-tight">
               {slide.title} <span className="font-semibold">{slide.highlight}</span>
             </h1>
-            {slide.link.startsWith("http") ? (
-              <a href={slide.link} target="_blank" rel="noreferrer" className="inline-flex items-center gap-3 mt-8 bg-base-color text-white px-8 py-4 rounded-full font-medium shadow-lg hover:shadow-xl transition text-sm md:text-base">
-                {slide.linkText}
-                <span className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-                  <ArrowRight size={14} className="text-base-color" />
-                </span>
-              </a>
-            ) : (
-              <Link to={slide.link} className="inline-flex items-center gap-3 mt-8 bg-base-color text-white px-8 py-4 rounded-full font-medium shadow-lg hover:shadow-xl transition text-sm md:text-base">
+            <Link to={slide.link} className="inline-flex items-center gap-3 mt-8 bg-base-color text-white px-8 py-4 rounded-full font-medium shadow-lg hover:shadow-xl transition text-sm md:text-base">
                 {slide.linkText}
                 <span className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
                   <ArrowRight size={14} className="text-base-color" />
                 </span>
               </Link>
-            )}
-            <div className="absolute bottom-0 left-0">
-              <span className="font-alt text-8xl md:text-[120px] font-semibold text-base-color/20">{slide.num}</span>
-            </div>
           </motion.div>
         </div>
 

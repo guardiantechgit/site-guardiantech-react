@@ -42,9 +42,9 @@ const Header = () => {
                 <ChevronDown size={12} className={`${textColor} group-hover:rotate-180 transition`} />
               </div>
               <div className="absolute top-full left-0 bg-dark-gray shadow-lg rounded-lg py-2 min-w-[240px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 mt-2">
-                <a href="https://www.youtube.com/watch?v=14xXieeVy3c&ab_channel=GuardianTech" target="_blank" rel="noreferrer" className="flex items-center gap-3 px-5 py-3 text-white text-sm hover:opacity-50 transition border-b border-white/10">
+                <Link to="/rastreamento" className="flex items-center gap-3 px-5 py-3 text-white text-sm hover:opacity-50 transition border-b border-white/10">
                   <MapPin size={16} /> Rastreamento Veicular
-                </a>
+                </Link>
                 <Link to="/controle-de-acesso" className="flex items-center gap-3 px-5 py-3 text-white text-sm hover:opacity-50 transition border-b border-white/10">
                   <Key size={16} /> Controle de Acesso
                 </Link>
@@ -54,8 +54,7 @@ const Header = () => {
               </div>
             </div>
             <Link to="/clientes" className={`font-alt text-[17px] hover:opacity-70 transition ${textColor}`}>Clientes</Link>
-            <Link to="/contato" className={`font-alt text-[17px] hover:opacity-70 transition ${textColor}`}>Contato</Link>
-            <a href="https://rastreamento.guardiantech.site" target="_blank" rel="noreferrer" className={`font-alt text-[17px] hover:opacity-70 transition ${textColor}`}>Plataforma</a>
+            <a href="https://plataforma.guardiantech.site" target="_blank" rel="noreferrer" className={`font-alt text-[17px] hover:opacity-70 transition ${textColor}`}>Plataforma</a>
           </nav>
 
           <div className="hidden lg:flex items-center gap-4">
@@ -88,9 +87,9 @@ const Header = () => {
             </button>
             {servicesOpen && (
               <div className="bg-dark-gray rounded-lg py-2 px-4 mb-2">
-                <a href="https://www.youtube.com/watch?v=14xXieeVy3c" target="_blank" rel="noreferrer" className="flex items-center gap-2 text-white text-sm py-3 border-b border-white/10">
+                <Link to="/rastreamento" className="flex items-center gap-2 text-white text-sm py-3 border-b border-white/10">
                   <MapPin size={14} /> Rastreamento Veicular
-                </a>
+                </Link>
                 <Link to="/controle-de-acesso" className="flex items-center gap-2 text-white text-sm py-3 border-b border-white/10">
                   <Key size={14} /> Controle de Acesso
                 </Link>
@@ -100,8 +99,7 @@ const Header = () => {
               </div>
             )}
             <Link to="/clientes" className="font-alt text-dark-gray py-2 text-[17px]">Clientes</Link>
-            <Link to="/contato" className="font-alt text-dark-gray py-2 text-[17px]">Contato</Link>
-            <a href="https://rastreamento.guardiantech.site" target="_blank" rel="noreferrer" className="font-alt text-dark-gray py-2 text-[17px]">Plataforma</a>
+            <a href="https://plataforma.guardiantech.site" target="_blank" rel="noreferrer" className="font-alt text-dark-gray py-2 text-[17px]">Plataforma</a>
             <a href="tel:5519999722280" className="text-base-color font-medium py-2">(19) 99972-2280</a>
           </nav>
         </div>

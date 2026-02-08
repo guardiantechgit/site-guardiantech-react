@@ -24,8 +24,8 @@ const Footer = () => {
           <div className="order-2 lg:order-3">
             <h4 className="font-alt font-medium mb-2 text-white">Serviços</h4>
             <ul className="space-y-0">
-              <li><a href="https://www.youtube.com/watch?v=14xXieeVy3c&ab_channel=GuardianTech" target="_blank" rel="noreferrer" className="text-white/60 text-sm hover:text-white transition">Rastreamento</a></li>
-              <li><a href="https://rastreamento.guardiantech.site" target="_blank" rel="noreferrer" className="text-white/60 text-sm hover:text-white transition">Plataforma Web</a></li>
+              <li><Link to="/rastreamento" className="text-white/60 text-sm hover:text-white transition">Rastreamento</Link></li>
+              <li><a href="https://plataforma.guardiantech.site" target="_blank" rel="noreferrer" className="text-white/60 text-sm hover:text-white transition">Plataforma Web</a></li>
               <li><Link to="/controle-de-acesso" className="text-white/60 text-sm hover:text-white transition">Controle de Acesso</Link></li>
               <li><Link to="/portaria-e-vigilancia" className="text-white/60 text-sm hover:text-white transition">Portaria e Vigilância</Link></li>
             </ul>
