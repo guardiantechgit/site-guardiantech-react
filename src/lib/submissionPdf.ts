@@ -265,25 +265,25 @@ export async function generateSubmissionPDF(s: Submission) {
         letter-spacing: .3px; background: #f0f0f0; color: #555;
       }
 
-      .print-body { padding: 6px 20px; }
+      .print-body { padding: 4px 20px; }
 
       .section {
-        margin-bottom: 5px; border: 1px solid #e5e5e5;
-        border-radius: 5px; overflow: hidden;
+        margin-bottom: 3px; border: 1px solid #e5e5e5;
+        border-radius: 4px; overflow: hidden;
       }
       .section-title {
-        padding: 3px 10px; font-size: 8px; font-weight: 700;
+        padding: 2px 8px; font-size: 7px; font-weight: 700;
         color: #AF985A; text-transform: uppercase; letter-spacing: .5px;
         border-bottom: 2px solid #AF985A; background: #fafafa;
       }
       .fields { display: grid; grid-template-columns: 1fr 1fr; }
-      .field { padding: 2px 10px; border-bottom: 1px solid #f0f0f0; border-right: 1px solid #f0f0f0; }
+      .field { padding: 1px 8px; border-bottom: 1px solid #f0f0f0; border-right: 1px solid #f0f0f0; }
       .field:nth-child(2n) { border-right: none; }
       .field-label {
-        display: block; font-size: 7px; font-weight: 600;
-        text-transform: uppercase; letter-spacing: .4px; color: #999;
+        display: block; font-size: 6.5px; font-weight: 600;
+        text-transform: uppercase; letter-spacing: .3px; color: #999; line-height: 1.1;
       }
-      .field-value { display: block; font-size: 10px; font-weight: 500; color: #1a1a1a; line-height: 1.2; }
+      .field-value { display: block; font-size: 9px; font-weight: 500; color: #1a1a1a; line-height: 1.15; }
 
       .cancellation-block {
         margin: 4px 0; padding: 5px 10px;
