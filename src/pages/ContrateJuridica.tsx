@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import { flushSync } from "react-dom";
 import { Send, Loader2 } from "lucide-react";
 import PageTitle from "@/components/PageTitle";
 import AnimatedSection from "@/components/AnimatedSection";
@@ -264,6 +265,7 @@ const CollectedDataFooter = ({ geolocation }: { geolocation?: string }) => {
 
 const ContrateJuridica = () => {
   const [submitting, setSubmitting] = useState(false);
+  const [cepLoading, setCepLoading] = useState<"address" | "install" | null>(null);
   const [form, setForm] = useState<FormData>(initialForm);
   const [alertMsg, setAlertMsg] = useState<{ type: "danger" | "warning" | "success" | "info"; text: string } | null>(null);
   const [invalidFields, setInvalidFields] = useState<Set<string>>(new Set());
@@ -337,12 +339,25 @@ const ContrateJuridica = () => {
     const cep8 = onlyDigits(form[cepField] as string).slice(0, 8);
     if (cep8.length !== 8) return;
     if (scope === "install" && form.installAddressChoice === "same") return;
-    const data = await lookupViaCep(cep8);
-    if (!data) return;
-    if (scope === "address") {
-      setForm((prev) => ({ ...prev, addressUf: data.uf || prev.addressUf, addressCity: data.localidade || prev.addressCity, addressNeighborhood: data.bairro || prev.addressNeighborhood, addressStreet: data.logradouro || prev.addressStreet }));
-    } else {
-      setForm((prev) => ({ ...prev, installUf: data.uf || prev.installUf, installCity: data.localidade || prev.installCity, installNeighborhood: data.bairro || prev.installNeighborhood, installStreet: data.logradouro || prev.installStreet }));
+
+    setCepLoading(scope);
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+      const res = await fetch(`https://viacep.com.br/ws/${cep8}/json/`, { cache: "no-store", signal: controller.signal });
+      clearTimeout(timeout);
+      const data = await res.json();
+      if (data.erro) { setCepLoading(null); return; }
+
+      if (scope === "address") {
+        setForm((prev) => ({ ...prev, addressUf: data.uf || prev.addressUf, addressCity: data.localidade || prev.addressCity, addressNeighborhood: data.bairro || prev.addressNeighborhood, addressStreet: data.logradouro || prev.addressStreet }));
+      } else {
+        setForm((prev) => ({ ...prev, installUf: data.uf || prev.installUf, installCity: data.localidade || prev.installCity, installNeighborhood: data.bairro || prev.installNeighborhood, installStreet: data.logradouro || prev.installStreet }));
+      }
+    } catch {
+      // timeout or network error
+    } finally {
+      setCepLoading(null);
     }
   };
 
@@ -493,23 +508,29 @@ const ContrateJuridica = () => {
     if (!validateAll()) return;
     setSubmitting(true);
 
-    const steps: SubmissionStep[] = [
+    let currentSteps: SubmissionStep[] = [
       { id: "validate", label: "Validando dados", status: "running" },
       { id: "metadata", label: "Coletando metadados", status: "pending" },
       { id: "docs", label: "Enviando documentos", status: "pending" },
       { id: "save", label: "Salvando formulário", status: "pending" },
       { id: "email", label: "Enviando notificação por e-mail", status: "pending" },
     ];
-    setProgressSteps([...steps]);
-    setShowProgress(true);
+
+    const updateAndFlush = (id: string, update: Partial<SubmissionStep>) => {
+      currentSteps = currentSteps.map((s) => (s.id === id ? { ...s, ...update } : s));
+      flushSync(() => setProgressSteps([...currentSteps]));
+    };
+
+    flushSync(() => {
+      setProgressSteps([...currentSteps]);
+      setShowProgress(true);
+    });
 
     try {
-      steps[0].status = "done"; steps[0].detail = "Dados validados.";
-      setProgressSteps([...steps]);
+      updateAndFlush("validate", { status: "done", detail: "Dados validados." });
 
       // Metadata
-      steps[1].status = "running";
-      setProgressSteps([...steps]);
+      updateAndFlush("metadata", { status: "running" });
 
       const recaptchaToken = "";
       let ipAddress = "";
@@ -521,18 +542,15 @@ const ContrateJuridica = () => {
       const geolocation = geoResult;
       const collectedAt = new Date().toISOString();
 
-      steps[1].status = "done"; steps[1].detail = "IP, navegador e localização coletados.";
-      setProgressSteps([...steps]);
+      updateAndFlush("metadata", { status: "done", detail: "IP, navegador e localização coletados." });
 
       // Docs
-      steps[2].status = "running";
-      setProgressSteps([...steps]);
+      updateAndFlush("docs", { status: "running" });
 
       let doc1Url = "";
       let doc1Name = "";
       if (docUpload.doc1) {
-        steps[2].detail = `Enviando: ${docUpload.doc1.file.name}`;
-        setProgressSteps([...steps]);
+        updateAndFlush("docs", { detail: `Enviando: ${docUpload.doc1.file.name}` });
         const ext = docUpload.doc1.file.name.split(".").pop() || "jpg";
         const cnpjDigits = form.cnpj.replace(/\D/g, "");
         const path = `${crypto.randomUUID()}.${ext}`;
@@ -542,8 +560,7 @@ const ContrateJuridica = () => {
         doc1Name = `DOC-PJ-${cnpjDigits}-01.${ext}`;
       }
 
-      steps[2].status = "done"; steps[2].detail = docUpload.doc1 ? "1 documento enviado." : "Nenhum documento.";
-      setProgressSteps([...steps]);
+      updateAndFlush("docs", { status: "done", detail: docUpload.doc1 ? "1 documento enviado." : "Nenhum documento." });
 
       const periodsArr = [];
       if (periods.manha) periodsArr.push("Manhã");
@@ -559,8 +576,7 @@ const ContrateJuridica = () => {
       }
 
       // Save
-      steps[3].status = "running";
-      setProgressSteps([...steps]);
+      updateAndFlush("save", { status: "running" });
 
       const submission = {
         form_type: "pj",
@@ -630,21 +646,18 @@ const ContrateJuridica = () => {
       const { error: dbError } = await supabase.from("form_submissions").insert(submission);
       if (dbError) throw new Error(`Erro ao salvar: ${dbError.message}`);
 
-      steps[3].status = "done"; steps[3].detail = "Dados salvos com sucesso.";
-      setProgressSteps([...steps]);
+      updateAndFlush("save", { status: "done", detail: "Dados salvos com sucesso." });
 
       // Email
-      steps[4].status = "running";
-      setProgressSteps([...steps]);
+      updateAndFlush("email", { status: "running" });
 
       try {
         await supabase.functions.invoke("send-form-email", { body: { submission, recaptchaToken } });
-        steps[4].status = "done"; steps[4].detail = "Notificação enviada.";
+        updateAndFlush("email", { status: "done", detail: "Notificação enviada." });
       } catch (emailErr) {
         console.error("Email sending failed (form was saved):", emailErr);
-        steps[4].status = "done"; steps[4].detail = "Formulário salvo (notificação pendente).";
+        updateAndFlush("email", { status: "done", detail: "Formulário salvo (notificação pendente)." });
       }
-      setProgressSteps([...steps]);
 
       await new Promise((r) => setTimeout(r, 1500));
       setShowProgress(false);
@@ -808,7 +821,12 @@ const ContrateJuridica = () => {
                   {/* ═══ ENDEREÇO ═══ */}
                   <SectionTitle>Endereço de cadastro</SectionTitle>
 
-                  <div>
+                  <div className="relative">
+                    {cepLoading === "address" && (
+                      <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60 backdrop-blur-[1px] rounded-lg">
+                        <Loader2 size={20} className="animate-spin text-base-color" />
+                      </div>
+                    )}
                     <label className="block text-sm font-medium mb-2">CEP*</label>
                     <input type="text" placeholder="00000-000" inputMode="numeric" maxLength={9}
                       value={form.addressCep}
@@ -983,7 +1001,12 @@ const ContrateJuridica = () => {
                       onChange={() => { setField("installAddressChoice", "other"); setForm((prev) => ({ ...prev, installCep: "", installUf: "", installCity: "", installNeighborhood: "", installStreet: "", installNumber: "", installComplement: "", installNote: "" })); }} />
                   </div>
 
-                  <div>
+                  <div className="relative">
+                    {cepLoading === "install" && (
+                      <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60 backdrop-blur-[1px] rounded-lg">
+                        <Loader2 size={20} className="animate-spin text-base-color" />
+                      </div>
+                    )}
                     <label className="block text-sm font-medium mb-2">CEP (instalação)*</label>
                     <input type="text" placeholder="00000-000" inputMode="numeric" maxLength={9} value={form.installCep}
                       onChange={(e) => setField("installCep", formatCEP(onlyDigits(e.target.value)))} onBlur={() => handleCepBlur("install")}
@@ -1093,7 +1116,14 @@ const ContrateJuridica = () => {
                             couponAlert.type === "warning" ? "bg-yellow-50 text-yellow-700 border border-yellow-200" :
                             "bg-red-50 text-red-700 border border-red-200"
                           }`}>
-                            <span>{couponAlert.text}</span>
+                            {couponAlert.type === "success" && couponApplied ? (
+                              <div>
+                                <span className="font-bold block mb-1">✅ Cupom aplicado com sucesso!</span>
+                                <span>{couponAlert.text}</span>
+                              </div>
+                            ) : (
+                              <span>{couponAlert.text}</span>
+                            )}
                           </div>
                         )}
                       </div>
