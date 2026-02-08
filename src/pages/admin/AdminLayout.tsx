@@ -8,9 +8,9 @@ interface Props {
 
 const navItems = [
   { title: "Dashboard", path: "/admin", icon: LayoutDashboard },
-  { title: "Formulários", path: "/admin/formularios", icon: FileText },
-  { title: "Cupons", path: "/admin/cupons", icon: Tag },
   { title: "Representantes", path: "/admin/representantes", icon: Users },
+  { title: "Cupons", path: "/admin/cupons", icon: Tag },
+  { title: "Formulários", path: "/admin/formularios", icon: FileText },
   { title: "Comissões", path: "/admin/comissoes", icon: BarChart3 },
   { title: "Contratos", path: "/admin/contratos", icon: ScrollText },
 ];
