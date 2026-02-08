@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShieldCheck, Hourglass, Award, Briefcase, ArrowRight, MapPin, Shield, Eye, Play, Star } from "lucide-react";
+import VideoModal from "@/components/VideoModal";
 import AnimatedSection from "@/components/AnimatedSection";
 import ClientsCarousel from "@/components/ClientsCarousel";
 
@@ -285,14 +286,11 @@ const Home = () => {
                   </AnimatePresence>
                 </h5>
               </div>
-              <a
-                href="https://www.youtube.com/watch?v=14xXieeVy3c"
-                target="_blank"
-                rel="noreferrer"
-                className="w-16 h-16 md:w-20 md:h-20 rounded-full border-2 border-white/30 flex items-center justify-center hover:bg-white/10 transition"
-              >
-                <Play size={28} className="text-white ml-1" />
-              </a>
+              <VideoModal videoUrl="https://www.youtube.com/watch?v=14xXieeVy3c">
+                <span className="w-16 h-16 md:w-20 md:h-20 rounded-full border-2 border-white/30 flex items-center justify-center hover:bg-white/10 transition">
+                  <Play size={28} className="text-white ml-1" />
+                </span>
+              </VideoModal>
             </div>
           </div>
         </div>
