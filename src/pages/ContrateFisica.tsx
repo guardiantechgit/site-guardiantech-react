@@ -620,25 +620,27 @@ const ContrateFisica = () => {
       let doc2Url = "";
       let doc2Name = "";
 
-      const uploadDoc = async (file: File) => {
+      const cpfDigits = form.cpf.replace(/\D/g, "");
+      const uploadDoc = async (file: File, slot: number) => {
         const ext = file.name.split(".").pop() || "jpg";
         const path = `${crypto.randomUUID()}.${ext}`;
         const { error } = await supabase.storage.from("documents").upload(path, file);
         if (error) throw new Error(`Erro ao enviar documento: ${error.message}`);
-        return { url: `documents/${path}`, name: file.name };
+        const standardName = `DOC-PF-${cpfDigits}-${String(slot).padStart(2, "0")}.${ext}`;
+        return { url: `documents/${path}`, name: standardName };
       };
 
       if (docUpload.doc1) {
         steps[2].detail = `Enviando: ${docUpload.doc1.file.name}`;
         setProgressSteps([...steps]);
-        const r = await uploadDoc(docUpload.doc1.file);
+        const r = await uploadDoc(docUpload.doc1.file, 1);
         doc1Url = r.url;
         doc1Name = r.name;
       }
       if (docUpload.doc2) {
         steps[2].detail = `Enviando: ${docUpload.doc2.file.name}`;
         setProgressSteps([...steps]);
-        const r = await uploadDoc(docUpload.doc2.file);
+        const r = await uploadDoc(docUpload.doc2.file, 2);
         doc2Url = r.url;
         doc2Name = r.name;
       }
