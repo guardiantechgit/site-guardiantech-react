@@ -255,11 +255,15 @@ const CollectedDataFooter = () => {
     return () => { cancelled = true; };
   }, []);
 
+  const now = new Date();
+  const dateStr = now.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const timeStr = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", hour12: false });
+
   return (
     <div className="md:col-span-2 mt-2">
       <small className="block text-medium-gray text-xs leading-relaxed">
         <strong>Dados coletados:</strong>{" "}
-        IP: {ip} — Navegador/SO: {parseUserAgent(navigator.userAgent)} — Data/Hora: {new Date().toLocaleString("pt-BR")}
+        IP: {ip} — Navegador e SO: {parseUserAgent(navigator.userAgent)} — Data e Hora: {dateStr} às {timeStr}
       </small>
     </div>
   );
