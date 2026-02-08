@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { CheckCircle2, Loader2, XCircle } from "lucide-react";
 
 export interface SubmissionStep {
@@ -29,8 +30,8 @@ const SubmissionProgress = ({ steps, visible }: SubmissionProgressProps) => {
   const doneCount = steps.filter((s) => s.status === "done").length;
   const progress = steps.length > 0 ? (doneCount / steps.length) * 100 : 0;
 
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 animate-in fade-in zoom-in-95 duration-300">
         <h5 className="font-alt text-dark-gray font-bold text-lg mb-2">Enviando formulário</h5>
         <p className="text-medium-gray text-xs mb-5">Aguarde enquanto processamos seus dados...</p>
@@ -72,7 +73,8 @@ const SubmissionProgress = ({ steps, visible }: SubmissionProgressProps) => {
           ))}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
