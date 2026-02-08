@@ -130,6 +130,19 @@ const AdminCoupons = () => {
       return;
     }
 
+    // Alert if no representative linked
+    if (!form.representative_id || form.representative_id === "none") {
+      const proceed = window.confirm("Você não relacionou o Cupom a um representante, deseja continuar?");
+      if (!proceed) return;
+    }
+
+    // Alert if representative linked but no commission
+    const commissionNum = parseMaskedToNumber(form.commission_value, form.commission_mode);
+    if (form.representative_id && form.representative_id !== "none" && commissionNum <= 0) {
+      const proceed = window.confirm("Você não selecionou nenhuma comissão para o representante deste cupom, deseja continuar?");
+      if (!proceed) return;
+    }
+
     const payload = {
       code,
       active: form.active,
@@ -141,7 +154,7 @@ const AdminCoupons = () => {
       monthly_discount_value: parseMaskedToNumber(form.monthly_discount_value, form.monthly_discount_mode),
       representative_id: form.representative_id || null,
       commission_mode: form.commission_mode,
-      commission_value: parseMaskedToNumber(form.commission_value, form.commission_mode),
+      commission_value: commissionNum,
     };
 
     if (editing) {

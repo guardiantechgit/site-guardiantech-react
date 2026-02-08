@@ -281,7 +281,7 @@ const AdminCommissions = () => {
                 </table>
               </div>
               <div class="subtotal-row">
-                <span>Subtotal ${coupon.code}</span>
+                <span>Subtotal</span>
                 <span>${formatCurrency(coupon.total)}</span>
               </div>
             `).join("")}
@@ -363,7 +363,7 @@ const AdminCommissions = () => {
                       </div>
                     ))}
                     <div className="subtotal flex justify-between text-sm font-semibold border-t pt-2 mt-2">
-                      <span>Subtotal {coupon.code}:</span>
+                      <span>Subtotal:</span>
                       <span>{formatCurrency(coupon.total)}</span>
                     </div>
                   </div>
