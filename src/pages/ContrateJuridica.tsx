@@ -574,12 +574,12 @@ const ContrateJuridica = () => {
 
   // Render helpers
   const SectionTitle = ({ children }: { children: React.ReactNode }) => (
-    <div className="col-span-full mb-1">
-      <h6 className="font-alt text-dark-gray font-bold text-lg">{children}</h6>
+    <div className="col-span-full mb-0">
+      <h6 className="font-alt text-dark-gray font-bold text-lg mb-1">{children}</h6>
     </div>
   );
 
-  const Divider = () => <div className="col-span-full"><span className="block mt-2 mb-6 w-full h-px bg-border" /></div>;
+  const Divider = () => <div className="col-span-full"><span className="block mt-1 mb-3 w-full h-px bg-border" /></div>;
 
   const CheckboxChoice = ({ label, checked, onChange }: { label: string; checked: boolean; onChange: () => void }) => (
     <label className="flex items-center gap-3 border border-extra-medium-gray rounded-lg px-4 py-3 cursor-pointer hover:border-base-color transition select-none">
