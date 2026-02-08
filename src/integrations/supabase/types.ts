@@ -39,6 +39,8 @@ export type Database = {
         Row: {
           active: boolean
           code: string
+          commission_mode: string
+          commission_value: number
           created_at: string
           id: string
           install_discount_enabled: boolean
@@ -47,10 +49,13 @@ export type Database = {
           monthly_discount_enabled: boolean
           monthly_discount_mode: string
           monthly_discount_value: number
+          representative_id: string | null
         }
         Insert: {
           active?: boolean
           code: string
+          commission_mode?: string
+          commission_value?: number
           created_at?: string
           id?: string
           install_discount_enabled?: boolean
@@ -59,10 +64,13 @@ export type Database = {
           monthly_discount_enabled?: boolean
           monthly_discount_mode?: string
           monthly_discount_value?: number
+          representative_id?: string | null
         }
         Update: {
           active?: boolean
           code?: string
+          commission_mode?: string
+          commission_value?: number
           created_at?: string
           id?: string
           install_discount_enabled?: boolean
@@ -71,8 +79,17 @@ export type Database = {
           monthly_discount_enabled?: boolean
           monthly_discount_mode?: string
           monthly_discount_value?: number
+          representative_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "coupons_representative_id_fkey"
+            columns: ["representative_id"]
+            isOneToOne: false
+            referencedRelation: "representatives"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       form_submissions: {
         Row: {
@@ -85,6 +102,7 @@ export type Database = {
           address_street: string | null
           address_uf: string | null
           birth_date: string | null
+          cancellation_reason: string | null
           cnpj: string | null
           collected_at: string
           coupon_code: string | null
@@ -119,6 +137,7 @@ export type Database = {
           install_street: string | null
           install_uf: string | null
           install_value: string | null
+          installation_paid: boolean
           installation_payment: string | null
           ip_address: string | null
           monthly_due_day: string | null
@@ -155,6 +174,7 @@ export type Database = {
           address_street?: string | null
           address_uf?: string | null
           birth_date?: string | null
+          cancellation_reason?: string | null
           cnpj?: string | null
           collected_at?: string
           coupon_code?: string | null
@@ -189,6 +209,7 @@ export type Database = {
           install_street?: string | null
           install_uf?: string | null
           install_value?: string | null
+          installation_paid?: boolean
           installation_payment?: string | null
           ip_address?: string | null
           monthly_due_day?: string | null
@@ -225,6 +246,7 @@ export type Database = {
           address_street?: string | null
           address_uf?: string | null
           birth_date?: string | null
+          cancellation_reason?: string | null
           cnpj?: string | null
           collected_at?: string
           coupon_code?: string | null
@@ -259,6 +281,7 @@ export type Database = {
           install_street?: string | null
           install_uf?: string | null
           install_value?: string | null
+          installation_paid?: boolean
           installation_payment?: string | null
           ip_address?: string | null
           monthly_due_day?: string | null
@@ -305,6 +328,39 @@ export type Database = {
           endpoint?: string
           id?: string
           ip_address?: string
+        }
+        Relationships: []
+      }
+      representatives: {
+        Row: {
+          active: boolean
+          cpf: string | null
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+          phone: string | null
+          pix_key: string | null
+        }
+        Insert: {
+          active?: boolean
+          cpf?: string | null
+          created_at?: string
+          email?: string | null
+          full_name: string
+          id?: string
+          phone?: string | null
+          pix_key?: string | null
+        }
+        Update: {
+          active?: boolean
+          cpf?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          phone?: string | null
+          pix_key?: string | null
         }
         Relationships: []
       }
