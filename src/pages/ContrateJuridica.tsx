@@ -286,6 +286,7 @@ const ContrateJuridica = () => {
   const [couponInput, setCouponInput] = useState("");
   const [couponApplied, setCouponApplied] = useState<Coupon | null>(null);
   const [couponAlert, setCouponAlert] = useState<{ type: string; text: string } | null>(null);
+  const [couponLoading, setCouponLoading] = useState(false);
 
   // Contract scroll
   const contractRef = useRef<HTMLDivElement>(null);
@@ -365,13 +366,36 @@ const ContrateJuridica = () => {
     setPeriods({ manha: newState, tarde: newState, noite: newState });
   };
 
+  const describeCouponBenefit = (coupon: Coupon): string => {
+    const parts: string[] = [];
+    if (coupon.install_discount_enabled && coupon.install_discount_value > 0) {
+      const desc = coupon.install_discount_mode === "percent"
+        ? `${coupon.install_discount_value}% de desconto na instalação`
+        : `R$ ${coupon.install_discount_value.toFixed(2).replace(".", ",")} de desconto na instalação`;
+      parts.push(desc);
+    }
+    if (coupon.monthly_discount_enabled && coupon.monthly_discount_value > 0) {
+      const desc = coupon.monthly_discount_mode === "percent"
+        ? `${coupon.monthly_discount_value}% de desconto na mensalidade`
+        : `R$ ${coupon.monthly_discount_value.toFixed(2).replace(".", ",")} de desconto na mensalidade`;
+      parts.push(desc);
+    }
+    if (parts.length === 0) return `Cupom ${coupon.code} válido.`;
+    return `Cupom ${coupon.code} válido. Você ganhou ${parts.join(" e ")}.`;
+  };
+
   const handleApplyCoupon = async () => {
     setCouponAlert(null);
     const raw = couponInput.trim();
     if (!raw) { setCouponAlert({ type: "warning", text: "Digite um cupom para aplicar." }); return; }
-    const found = await findCoupon(raw);
-    if (found) { setCouponApplied(found); setCouponAlert({ type: "success", text: `Cupom ${found.code} válido.` }); }
-    else { setCouponApplied(null); setCouponAlert({ type: "danger", text: `Cupom ${raw.toUpperCase()} inválido.` }); }
+    setCouponLoading(true);
+    try {
+      const found = await findCoupon(raw);
+      if (found) { setCouponApplied(found); setCouponAlert({ type: "success", text: describeCouponBenefit(found) }); }
+      else { setCouponApplied(null); setCouponAlert({ type: "danger", text: `Cupom ${raw.toUpperCase()} inválido.` }); }
+    } finally {
+      setCouponLoading(false);
+    }
   };
 
   const handleCouponInputChange = (val: string) => {
@@ -599,7 +623,7 @@ const ContrateJuridica = () => {
         user_agent_friendly: uaFriendly,
         geolocation: geolocation || null,
         collected_at: collectedAt,
-        status: "novo",
+        status: "recebido",
       };
 
       const { error: dbError } = await supabase.from("form_submissions").insert(submission);
@@ -1056,9 +1080,10 @@ const ContrateJuridica = () => {
                           <input type="text" placeholder="Digite aqui e clique em APLICAR" value={couponInput}
                             onChange={(e) => handleCouponInputChange(e.target.value)}
                             className="flex-1 px-4 py-3 border border-extra-medium-gray rounded-lg focus:outline-none focus:ring-2 focus:ring-base-color text-sm" />
-                          <button type="button" onClick={handleApplyCoupon}
-                            className="bg-base-color text-white px-6 py-3 rounded-full text-sm font-medium shadow hover:opacity-90 transition whitespace-nowrap">
-                            Aplicar
+                          <button type="button" onClick={handleApplyCoupon} disabled={couponLoading}
+                            className="bg-base-color text-white px-6 py-3 rounded-full text-sm font-medium shadow hover:opacity-90 transition whitespace-nowrap disabled:opacity-60 flex items-center gap-2">
+                            {couponLoading && <Loader2 size={14} className="animate-spin" />}
+                            {couponLoading ? "Verificando..." : "Aplicar"}
                           </button>
                         </div>
                         {couponAlert && (
@@ -1120,7 +1145,10 @@ const ContrateJuridica = () => {
                       <span className="text-sm">Li integralmente e concordo com o <strong>CONTRATO DE PRESTAÇÃO DE SERVIÇO</strong></span>
                     </label>
                     {!contractScrolled && (
-                      <small className="block text-medium-gray text-xs mt-2">Role o contrato até o final para habilitar o aceite.</small>
+                      <div className="mt-3 bg-yellow-50 border border-yellow-300 rounded-lg px-4 py-3 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-yellow-600 shrink-0"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+                        <span className="text-sm text-yellow-800 font-bold">Role o contrato até o final para habilitar o aceite.</span>
+                      </div>
                     )}
                   </div>
 
