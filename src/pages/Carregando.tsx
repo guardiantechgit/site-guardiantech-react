@@ -1,13 +1,16 @@
 const Carregando = () => {
-  // This page intentionally never finishes loading images
   return (
     <main>
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-medium-gray">Página de teste do loader</p>
-      </div>
-      {/* Hidden image that will never load, keeping the loader visible */}
-      <img src="https://fake-url-that-will-never-load.invalid/image.jpg" alt="" className="hidden" />
-      <img src="https://another-fake-url.invalid/test.png" alt="" className="hidden" />
+      <div className="min-h-screen" />
+      {/* Images that will never load - keeps SiteLoader spinning forever */}
+      {Array.from({ length: 20 }).map((_, i) => (
+        <img
+          key={i}
+          src={`https://this-domain-will-never-resolve-${i}.invalid/image.jpg`}
+          alt=""
+          style={{ position: "absolute", width: 1, height: 1, opacity: 0 }}
+        />
+      ))}
     </main>
   );
 };

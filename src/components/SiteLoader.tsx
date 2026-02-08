@@ -5,6 +5,7 @@ import { useLocation } from "react-router-dom";
 const SiteLoader = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const location = useLocation();
+  const forceLoader = location.pathname === "/carregando";
 
   const waitForImages = useCallback(() => {
     setLoading(true);
@@ -55,8 +56,12 @@ const SiteLoader = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   useEffect(() => {
+    if (forceLoader) {
+      setLoading(true);
+      return;
+    }
     return waitForImages();
-  }, [location.pathname, waitForImages]);
+  }, [location.pathname, waitForImages, forceLoader]);
 
   return (
     <>
