@@ -20,7 +20,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 async function checkRateLimit(supabase: any, ip: string, endpoint: string, maxRequests: number, windowMs: number): Promise<boolean> {
   // Cleanup old entries periodically
-  await supabase.rpc("cleanup_old_rate_limits").catch(() => {});
+  try { await supabase.rpc("cleanup_old_rate_limits"); } catch (_) { /* ignore */ }
 
   const since = new Date(Date.now() - windowMs).toISOString();
   const { data } = await supabase

@@ -34,7 +34,7 @@ function validateString(val: unknown, maxLen: number): boolean {
 }
 
 async function checkRateLimit(supabase: any, ip: string, endpoint: string, maxRequests: number, windowMs: number): Promise<boolean> {
-  await supabase.rpc("cleanup_old_rate_limits").catch(() => {});
+  try { await supabase.rpc("cleanup_old_rate_limits"); } catch (_) { /* ignore */ }
 
   const since = new Date(Date.now() - windowMs).toISOString();
   const { data } = await supabase
