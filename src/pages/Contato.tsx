@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Smile, Phone, Mail, MessageSquare, Loader2 } from "lucide-react";
 import PageTitle from "@/components/PageTitle";
 import AnimatedSection from "@/components/AnimatedSection";
+import PageSEO from "@/components/PageSEO";
 // import { useRecaptcha } from "@/hooks/useRecaptcha"; // TEMPORARILY DISABLED
 import { supabase } from "@/integrations/supabase/client";
 
@@ -68,6 +69,12 @@ const Contato = () => {
 
   return (
     <main>
+      <PageSEO
+        title="Contato - GuardianTech"
+        description="Entre em contato com a GuardianTech para saber mais sobre rastreamento veicular, segurança eletrônica e nossos serviços."
+        ogImage="/images/title-contato.jpg"
+        path="/contato"
+      />
       <PageTitle title="Entre em contato" backgroundImage="/images/title-contato.jpg" />
 
       <section id="down-section" className="py-20">

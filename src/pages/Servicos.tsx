@@ -2,6 +2,7 @@ import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import PageTitle from "@/components/PageTitle";
 import AnimatedSection from "@/components/AnimatedSection";
+import PageSEO from "@/components/PageSEO";
 
 const services = [
   {
@@ -29,6 +30,12 @@ const services = [
 
 const Servicos = () => (
   <main>
+    <PageSEO
+      title="Serviços - GuardianTech"
+      description="Conheça os serviços da GuardianTech: rastreamento veicular, controle de acesso, portaria e vigilância patrimonial para empresas e condomínios."
+      ogImage="/images/title-servicos.jpg"
+      path="/servicos"
+    />
     <PageTitle title="Serviços oferecidos" backgroundImage="/images/title-servicos.jpg" />
 
     <section id="down-section" className="bg-solitude-blue py-20">
