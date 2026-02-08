@@ -27,8 +27,9 @@ const Contato = () => {
   const validate = () => {
     const e: Record<string, string> = {};
     if (!form.nome.trim()) e.nome = "Informe seu nome";
-    if (!isValidPhone(form.telefone)) e.telefone = "Telefone inválido. Use (XX) XXXXX-XXXX ou (XX) XXXX-XXXX";
+    if (!isValidPhone(form.telefone)) e.telefone = "Telefone inválido";
     if (!isValidEmail(form.email)) e.email = "E-mail inválido";
+    if (form.mensagem.trim().length < 30) e.mensagem = "A mensagem deve ter pelo menos 30 caracteres";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -93,7 +94,7 @@ const Contato = () => {
                       <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-medium-gray" />
                       <input
                         type="tel"
-                        placeholder="Seu telefone* (XX) XXXXX-XXXX"
+                        placeholder="Seu telefone*"
                         value={form.telefone}
                         onChange={(e) => { setForm({ ...form, telefone: formatPhone(e.target.value) }); setErrors({ ...errors, telefone: "" }); }}
                         className={`w-full pl-12 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-base-color text-sm ${errors.telefone ? "border-red-500" : "border-extra-medium-gray"}`}
@@ -114,16 +115,19 @@ const Contato = () => {
                     </div>
                     {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
                   </div>
-                  <div className="relative">
-                    <MessageSquare size={18} className="absolute left-4 top-4 text-medium-gray" />
-                    <textarea
-                      placeholder="Sua mensagem"
-                      rows={3}
-                      value={form.mensagem}
-                      onChange={(e) => setForm({ ...form, mensagem: e.target.value })}
-                      className="w-full pl-12 pr-4 py-3 border border-extra-medium-gray rounded-lg focus:outline-none focus:ring-2 focus:ring-base-color text-sm"
-                    />
-                  </div>
+                   <div>
+                     <div className="relative">
+                       <MessageSquare size={18} className="absolute left-4 top-4 text-medium-gray" />
+                       <textarea
+                         placeholder="Sua mensagem* (mínimo 30 caracteres)"
+                         rows={3}
+                         value={form.mensagem}
+                         onChange={(e) => { setForm({ ...form, mensagem: e.target.value }); setErrors({ ...errors, mensagem: "" }); }}
+                         className={`w-full pl-12 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-base-color text-sm ${errors.mensagem ? "border-red-500" : "border-extra-medium-gray"}`}
+                       />
+                     </div>
+                     {errors.mensagem && <p className="text-red-500 text-xs mt-1">{errors.mensagem}</p>}
+                   </div>
                   <button type="submit" className="bg-dark-gray text-white px-8 py-3 rounded-lg font-medium hover:bg-dark-gray/90 transition text-sm">
                     Enviar mensagem
                   </button>
