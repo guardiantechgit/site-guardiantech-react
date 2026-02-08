@@ -17,6 +17,7 @@ const clients = [
   "cliente-comandofox.png",
   "cliente-uaiveiculos.png",
   "cliente-logmov.png",
+  "cliente-locagora.png",
 ];
 
 const ClientsCarousel = () => {
