@@ -205,15 +205,7 @@ export async function generateSubmissionPDF(s: Submission) {
   const docPage = hasDocPage
     ? `
       <div class="page-break"></div>
-      <div class="print-header">
-        ${logoBase64 ? `<img src="${logoBase64}" alt="GuardianTech" />` : `<span style="font-size:18px;font-weight:700;color:#AF985A;">GuardianTech Rastreamento</span>`}
-        <div class="print-header-info">
-          <strong>Documentos Anexados</strong>
-          ${s.razao_social || s.full_name}
-        </div>
-      </div>
-      <div class="print-title">DOCUMENTOS</div>
-      <div class="print-body docs-body">
+      <div class="docs-body">
         ${doc1Data ? renderDocEmbed(doc1Data, s.doc1_name || "Documento 1") : ""}
         ${doc2Data ? renderDocEmbed(doc2Data, s.doc2_name || "Documento 2") : ""}
       </div>
