@@ -296,7 +296,7 @@ export async function generateSubmissionPDF(s: Submission) {
       /* Documents */
       .doc-page {
         border: 1px solid #e5e5e5; border-radius: 5px; overflow: hidden;
-        margin: 0 20px 8px 20px;
+        margin: 0 20px 8px 20px; max-height: 96vh;
       }
       .doc-label {
         padding: 3px 10px; font-size: 8px; font-weight: 700;
@@ -304,7 +304,7 @@ export async function generateSubmissionPDF(s: Submission) {
         border-bottom: 2px solid #AF985A; background: #fafafa;
       }
       .doc-img {
-        display: block; width: 100%;
+        display: block; width: 100%; max-height: 90vh;
         padding: 4px; object-fit: contain;
       }
 
