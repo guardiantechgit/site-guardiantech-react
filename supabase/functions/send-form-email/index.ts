@@ -16,6 +16,10 @@ function escapeHtml(str: string | null | undefined): string {
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const CPF_RE = /^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/;
+const PHONE_RE = /^[\d\s().+-]{8,20}$/;
+
 function section(title: string, rows: [string, string | null | undefined][]): string {
   const filtered = rows.filter(([_, v]) => v && v.trim());
   if (filtered.length === 0) return "";
@@ -25,12 +29,47 @@ function section(title: string, rows: [string, string | null | undefined][]): st
   return `<h3 style="margin:24px 0 8px;color:#AF985A;font-size:15px;border-bottom:1px solid #eee;padding-bottom:4px;">${title}</h3><table style="border-collapse:collapse;">${rowsHtml}</table>`;
 }
 
+function validateString(val: unknown, maxLen: number): boolean {
+  return !val || (typeof val === "string" && val.length <= maxLen);
+}
+
+async function checkRateLimit(supabase: any, ip: string, endpoint: string, maxRequests: number, windowMs: number): Promise<boolean> {
+  await supabase.rpc("cleanup_old_rate_limits").catch(() => {});
+
+  const since = new Date(Date.now() - windowMs).toISOString();
+  const { data } = await supabase
+    .from("rate_limits")
+    .select("id")
+    .eq("ip_address", ip)
+    .eq("endpoint", endpoint)
+    .gte("created_at", since);
+
+  if (data && data.length >= maxRequests) return false;
+
+  await supabase.from("rate_limits").insert({ ip_address: ip, endpoint });
+  return true;
+}
+
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
   try {
+    // Rate limiting: 3 form submissions per hour per IP
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    const allowed = await checkRateLimit(supabase, ip, "send-form-email", 3, 3600000);
+    if (!allowed) {
+      return new Response(JSON.stringify({ error: "Muitas solicitações. Tente novamente mais tarde." }), {
+        status: 429,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
     const body = await req.json();
     const d = body.submission;
     const recaptchaToken = body.recaptchaToken;
@@ -50,7 +89,7 @@ serve(async (req: Request) => {
     });
     const captchaData = await captchaRes.json();
 
-    if (!captchaData.success || (captchaData.score !== undefined && captchaData.score < 0.3)) {
+    if (!captchaData.success || (captchaData.score !== undefined && captchaData.score < 0.5)) {
       console.log("reCAPTCHA failed:", captchaData);
       return new Response(JSON.stringify({ error: "Verificação CAPTCHA falhou." }), {
         status: 403,
@@ -58,12 +97,47 @@ serve(async (req: Request) => {
       });
     }
 
+    // Server-side validation
+    if (!d || typeof d !== "object") {
+      return new Response(JSON.stringify({ error: "Dados inválidos." }), { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } });
+    }
+
+    // Required fields
+    if (!d.full_name || typeof d.full_name !== "string" || !d.full_name.trim()) {
+      return new Response(JSON.stringify({ error: "Nome completo é obrigatório." }), { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } });
+    }
+    if (!d.email || typeof d.email !== "string" || !EMAIL_RE.test(d.email.trim())) {
+      return new Response(JSON.stringify({ error: "E-mail inválido." }), { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } });
+    }
+    if (!d.cpf || typeof d.cpf !== "string" || !CPF_RE.test(d.cpf.trim())) {
+      return new Response(JSON.stringify({ error: "CPF inválido." }), { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } });
+    }
+    if (!d.phone_primary || typeof d.phone_primary !== "string" || !PHONE_RE.test(d.phone_primary.replace(/\D/g, ""))) {
+      return new Response(JSON.stringify({ error: "Telefone inválido." }), { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } });
+    }
+
+    // Length limits for text fields
+    const textLimits: [string, number][] = [
+      ["full_name", 200], ["email", 255], ["cpf", 20], ["rg", 30],
+      ["phone_primary", 30], ["phone_secondary", 30], ["platform_username", 100],
+      ["address_cep", 15], ["address_street", 300], ["address_number", 20],
+      ["address_complement", 200], ["address_neighborhood", 200], ["address_city", 200],
+      ["address_uf", 5], ["address_note", 500],
+      ["vehicle_plate", 15], ["vehicle_brand", 100], ["vehicle_model", 100],
+      ["vehicle_year", 10], ["vehicle_color", 50], ["vehicle_fuel", 50],
+      ["install_note", 500], ["coupon_code", 50],
+    ];
+
+    for (const [field, max] of textLimits) {
+      if (!validateString(d[field], max)) {
+        return new Response(JSON.stringify({ error: `Campo ${field} muito longo.` }), { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } });
+      }
+    }
+
     const attachments: { filename: string; content: string }[] = [];
 
     // Download attachments from storage if URLs exist
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const ALLOWED_DOC_TYPES = ["application/pdf", "image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
 
     for (const doc of [
       { url: d.doc1_url, name: d.doc1_name },
@@ -71,13 +145,22 @@ serve(async (req: Request) => {
     ]) {
       if (!doc.url) continue;
       try {
-        // Extract path from full URL: after /storage/v1/object/public/documents/
         const pathMatch = doc.url.match(/\/documents\/(.+)$/);
         if (pathMatch) {
           const { data, error } = await supabase.storage
             .from("documents")
             .download(pathMatch[1]);
           if (data && !error) {
+            // Validate file size (10MB max)
+            if (data.size > 10 * 1024 * 1024) {
+              console.warn("Attachment too large, skipping:", doc.name);
+              continue;
+            }
+            // Validate file type
+            if (!ALLOWED_DOC_TYPES.includes(data.type)) {
+              console.warn("Invalid file type, skipping:", doc.name, data.type);
+              continue;
+            }
             const arrayBuf = await data.arrayBuffer();
             const base64 = btoa(
               new Uint8Array(arrayBuf).reduce((s, b) => s + String.fromCharCode(b), "")
@@ -183,7 +266,7 @@ serve(async (req: Request) => {
     const emailPayload: any = {
       from: "GuardianTech <noreply@guardiantech.site>",
       to: ["contato.guardiantech@gmail.com", "rastreamento@guardiantech.site"],
-      subject: `Nova contratação: ${d.full_name} — ${d.vehicle_plate || "Sem placa"}`,
+      subject: `Nova contratação: ${d.full_name.substring(0, 100)} — ${d.vehicle_plate || "Sem placa"}`,
       html,
     };
 
