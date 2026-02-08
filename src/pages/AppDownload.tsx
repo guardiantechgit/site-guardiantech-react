@@ -120,8 +120,6 @@ const AppDownload = () => {
   const storeName = isAndroid ? "Google Play" : "App Store";
 
   useEffect(() => {
-    if (!isMobile) return;
-
     const timer = setInterval(() => {
       countdownRef.current -= 1;
       setCountdown(countdownRef.current);
@@ -129,8 +127,13 @@ const AppDownload = () => {
         clearInterval(timer);
         if (!redirected.current) {
           redirected.current = true;
-          if (isAndroid) openPlayStore();
-          else openAppStore();
+          if (!isMobile) {
+            window.location.href = "https://plataforma.guardiantech.site/";
+          } else if (isAndroid) {
+            openPlayStore();
+          } else {
+            openAppStore();
+          }
         }
       }
     }, 1000);
@@ -168,8 +171,10 @@ const AppDownload = () => {
             <div className="app-card">
               <img className="app-logo" src="https://guardiantech.site/images/guardiantech-app.png" alt="GuardianTrack - Download nas lojas oficiais" />
               <p>O aplicativo está disponível para <strong>App Store (iOS)</strong> e <strong>Google Play (Android)</strong>, porém identificamos que você está em um <strong>computador</strong>.</p>
+              <p className="app-hint">Você será redirecionado para a <strong>Plataforma Web</strong> em <span className="app-count">{countdown}</span>…</p>
               <p className="app-hint">Se quiser acessar o aplicativo nas lojas oficiais, utilize os botões abaixo.</p>
               <div className="app-btns">
+                <a className="app-btn" href="https://plataforma.guardiantech.site/" rel="noopener" target="_blank">Plataforma Web</a>
                 <a className="app-btn" href={LINKS.appWeb} rel="noopener" target="_blank">App Store (iOS)</a>
                 <a className="app-btn" href={LINKS.playWeb} rel="noopener" target="_blank">Google Play (Android)</a>
               </div>
