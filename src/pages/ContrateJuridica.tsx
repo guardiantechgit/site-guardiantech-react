@@ -8,6 +8,8 @@ import { findCoupon, type Coupon } from "@/lib/coupons";
 import { computeQuote, type QuoteResult } from "@/lib/quoteCalculator";
 import { lookupViaCep } from "@/lib/viaCep";
 import { useDocumentUpload } from "@/hooks/useDocumentUpload";
+import { useGeolocation } from "@/hooks/useGeolocation";
+import SubmissionProgress, { type SubmissionStep } from "@/components/SubmissionProgress";
 // import { useRecaptcha } from "@/hooks/useRecaptcha"; // TEMPORARILY DISABLED
 import { supabase } from "@/integrations/supabase/client";
 
@@ -223,7 +225,7 @@ const DocSlot = ({ label, doc, inputRef, onSelect, onRemove, onChange, altText }
   </div>
 );
 
-const CollectedDataFooter = () => {
+const CollectedDataFooter = ({ geolocation }: { geolocation?: string }) => {
   const [ip, setIp] = useState("Carregando...");
   useEffect(() => {
     let cancelled = false;
@@ -254,6 +256,7 @@ const CollectedDataFooter = () => {
       <small className="block text-medium-gray text-xs leading-relaxed">
         <strong>Dados coletados:</strong>{" "}
         IP: {ip} — Navegador e SO: {parseUserAgent(navigator.userAgent)} — Data e Hora: {dateStr} às {timeStr}
+        {geolocation ? ` — Localização: ${geolocation}` : ""}
       </small>
     </div>
   );
@@ -292,6 +295,13 @@ const ContrateJuridica = () => {
   // Document upload (only 1 doc for PJ)
   const docUpload = useDocumentUpload();
   // const { getToken } = useRecaptcha(); // TEMPORARILY DISABLED
+
+  // Geolocation
+  const { geolocation: geoResult } = useGeolocation();
+
+  // Submission progress
+  const [progressSteps, setProgressSteps] = useState<SubmissionStep[]>([]);
+  const [showProgress, setShowProgress] = useState(false);
 
   // Quote
   const quote: QuoteResult = computeQuote(form.vehicleType, form.remoteBlocking, couponApplied);
@@ -370,12 +380,20 @@ const ContrateJuridica = () => {
   };
 
   // Validation
+  const focusFirstError = (fieldName: string) => {
+    setTimeout(() => {
+      const el = document.querySelector<HTMLElement>(`[data-field="${fieldName}"], [name="${fieldName}"]`);
+      if (el) { el.focus(); el.scrollIntoView({ behavior: "smooth", block: "center" }); }
+    }, 100);
+  };
+
   const validateAll = (): boolean => {
     setAlertMsg(null);
     setInvalidFields(new Set());
-    const fail = (field: string, msg: string) => { markInvalid(field); showAlert("danger", msg); return false; };
+    const fail = (field: string, msg: string) => { markInvalid(field); showAlert("danger", msg); focusFirstError(field); return false; };
 
     if (!form.razaoSocial.trim()) return fail("razaoSocial", "Preencha a razão social.");
+    if (form.razaoSocial.trim().split(/\s+/).length < 2) return fail("razaoSocial", "A razão social deve conter ao menos duas palavras.");
     if (!form.nomeFantasia.trim()) return fail("nomeFantasia", "Preencha o nome fantasia.");
     if (!form.email.trim()) return fail("email", "Preencha o e-mail principal.");
     if (!isValidEmail(form.email)) return fail("email", "Digite um e-mail válido.");
@@ -451,25 +469,46 @@ const ContrateJuridica = () => {
     if (!validateAll()) return;
     setSubmitting(true);
 
-    try {
-      // reCAPTCHA TEMPORARILY DISABLED
-      const recaptchaToken = "";
+    const steps: SubmissionStep[] = [
+      { id: "validate", label: "Validando dados", status: "running" },
+      { id: "metadata", label: "Coletando metadados", status: "pending" },
+      { id: "docs", label: "Enviando documentos", status: "pending" },
+      { id: "save", label: "Salvando formulário", status: "pending" },
+      { id: "email", label: "Enviando notificação por e-mail", status: "pending" },
+    ];
+    setProgressSteps([...steps]);
+    setShowProgress(true);
 
+    try {
+      steps[0].status = "done"; steps[0].detail = "Dados validados.";
+      setProgressSteps([...steps]);
+
+      // Metadata
+      steps[1].status = "running";
+      setProgressSteps([...steps]);
+
+      const recaptchaToken = "";
       let ipAddress = "";
       try { const r = await fetch("https://api64.ipify.org?format=json"); const d = await r.json(); ipAddress = d.ip || ""; }
       catch { try { const r2 = await fetch("https://ipinfo.io/json"); const d2 = await r2.json(); ipAddress = d2.ip || ""; } catch {} }
 
       const userAgent = navigator.userAgent;
       const uaFriendly = parseUserAgent(userAgent);
-
-      let geolocation = "";
-      try { const pos = await new Promise<GeolocationPosition>((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 })); geolocation = `${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`; } catch {}
-
+      const geolocation = geoResult;
       const collectedAt = new Date().toISOString();
+
+      steps[1].status = "done"; steps[1].detail = "IP, navegador e localização coletados.";
+      setProgressSteps([...steps]);
+
+      // Docs
+      steps[2].status = "running";
+      setProgressSteps([...steps]);
 
       let doc1Url = "";
       let doc1Name = "";
       if (docUpload.doc1) {
+        steps[2].detail = `Enviando: ${docUpload.doc1.file.name}`;
+        setProgressSteps([...steps]);
         const ext = docUpload.doc1.file.name.split(".").pop() || "jpg";
         const path = `${crypto.randomUUID()}.${ext}`;
         const { error } = await supabase.storage.from("documents").upload(path, docUpload.doc1.file);
@@ -477,6 +516,9 @@ const ContrateJuridica = () => {
         doc1Url = `documents/${path}`;
         doc1Name = docUpload.doc1.file.name;
       }
+
+      steps[2].status = "done"; steps[2].detail = docUpload.doc1 ? "1 documento enviado." : "Nenhum documento.";
+      setProgressSteps([...steps]);
 
       const periodsArr = [];
       if (periods.manha) periodsArr.push("Manhã");
@@ -491,17 +533,21 @@ const ContrateJuridica = () => {
         couponDesc = parts.join("; ");
       }
 
+      // Save
+      steps[3].status = "running";
+      setProgressSteps([...steps]);
+
       const submission = {
         form_type: "pj",
         full_name: form.razaoSocial.trim(),
         razao_social: form.razaoSocial.trim(),
         nome_fantasia: form.nomeFantasia.trim(),
         email: form.email.trim(),
-        cpf: "", // not applicable for PJ
+        cpf: "",
         cnpj: form.cnpj,
         ie: form.ieIsento ? "ISENTO" : form.ie.trim(),
         ie_isento: form.ieIsento,
-        rg: "", // not applicable for PJ
+        rg: "",
         phone_primary: form.phonePrimary,
         phone_secondary: form.phoneSecondary,
         platform_username: sanitizeUsername(form.platformUsername),
@@ -559,12 +605,28 @@ const ContrateJuridica = () => {
       const { error: dbError } = await supabase.from("form_submissions").insert(submission);
       if (dbError) throw new Error(`Erro ao salvar: ${dbError.message}`);
 
-      try { await supabase.functions.invoke("send-form-email", { body: { submission, recaptchaToken } }); }
-      catch (emailErr) { console.error("Email sending failed (form was saved):", emailErr); }
+      steps[3].status = "done"; steps[3].detail = "Dados salvos com sucesso.";
+      setProgressSteps([...steps]);
 
+      // Email
+      steps[4].status = "running";
+      setProgressSteps([...steps]);
+
+      try {
+        await supabase.functions.invoke("send-form-email", { body: { submission, recaptchaToken } });
+        steps[4].status = "done"; steps[4].detail = "Notificação enviada.";
+      } catch (emailErr) {
+        console.error("Email sending failed (form was saved):", emailErr);
+        steps[4].status = "done"; steps[4].detail = "Formulário salvo (notificação pendente).";
+      }
+      setProgressSteps([...steps]);
+
+      await new Promise((r) => setTimeout(r, 1500));
+      setShowProgress(false);
       showAlert("success", "Formulário enviado com sucesso! Em breve entraremos em contato.");
     } catch (err: any) {
       console.error("Submit error:", err);
+      setShowProgress(false);
       showAlert("danger", err.message || "Erro ao enviar o formulário. Tente novamente.");
     } finally {
       setSubmitting(false);
@@ -1062,7 +1124,7 @@ const ContrateJuridica = () => {
                   </div>
 
                   {/* ═══ SUBMIT ═══ */}
-                  <CollectedDataFooter />
+                  <CollectedDataFooter geolocation={geoResult} />
 
                   <div className="md:col-span-2">
                     <div className="flex flex-col md:flex-row items-center justify-between gap-6 mt-4">

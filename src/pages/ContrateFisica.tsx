@@ -8,6 +8,8 @@ import { findCoupon, type Coupon } from "@/lib/coupons";
 import { computeQuote, type QuoteResult } from "@/lib/quoteCalculator";
 import { lookupViaCep } from "@/lib/viaCep";
 import { useDocumentUpload } from "@/hooks/useDocumentUpload";
+import { useGeolocation } from "@/hooks/useGeolocation";
+import SubmissionProgress, { type SubmissionStep } from "@/components/SubmissionProgress";
 // import { useRecaptcha } from "@/hooks/useRecaptcha"; // TEMPORARILY DISABLED
 import { supabase } from "@/integrations/supabase/client";
 
@@ -233,7 +235,7 @@ const DocSlot = ({ label, doc, inputRef, onSelect, onRemove, onChange, altText }
 );
 
 // Collected data footer with real IP fetch
-const CollectedDataFooter = () => {
+const CollectedDataFooter = ({ geolocation }: { geolocation?: string }) => {
   const [ip, setIp] = useState("Carregando...");
   useEffect(() => {
     let cancelled = false;
@@ -264,6 +266,7 @@ const CollectedDataFooter = () => {
       <small className="block text-medium-gray text-xs leading-relaxed">
         <strong>Dados coletados:</strong>{" "}
         IP: {ip} — Navegador e SO: {parseUserAgent(navigator.userAgent)} — Data e Hora: {dateStr} às {timeStr}
+        {geolocation ? ` — Localização: ${geolocation}` : ""}
       </small>
     </div>
   );
@@ -302,6 +305,13 @@ const ContrateFisica = () => {
   // Document upload
   const docUpload = useDocumentUpload();
   // const { getToken } = useRecaptcha(); // TEMPORARILY DISABLED
+
+  // Geolocation - request on first interaction
+  const { geolocation: geoResult } = useGeolocation();
+
+  // Submission progress
+  const [progressSteps, setProgressSteps] = useState<SubmissionStep[]>([]);
+  const [showProgress, setShowProgress] = useState(false);
 
   // Quote
   const quote: QuoteResult = computeQuote(form.vehicleType, form.remoteBlocking, couponApplied);
@@ -424,6 +434,13 @@ const ContrateFisica = () => {
   };
 
   // ── Validation ──
+  const focusFirstError = (fieldName: string) => {
+    setTimeout(() => {
+      const el = document.querySelector<HTMLElement>(`[data-field="${fieldName}"], [name="${fieldName}"]`);
+      if (el) { el.focus(); el.scrollIntoView({ behavior: "smooth", block: "center" }); }
+    }, 100);
+  };
+
   const validateAll = (): boolean => {
     setAlertMsg(null);
     setInvalidFields(new Set());
@@ -431,17 +448,29 @@ const ContrateFisica = () => {
     const fail = (field: string, msg: string) => {
       markInvalid(field);
       showAlert("danger", msg);
+      focusFirstError(field);
       return false;
     };
 
     // Personal data
     if (!form.fullName.trim()) return fail("fullName", "Preencha seu nome completo.");
+    if (form.fullName.trim().split(/\s+/).length < 2) return fail("fullName", "Informe nome e sobrenome (mínimo duas palavras).");
     if (!form.email.trim()) return fail("email", "Preencha seu e-mail principal.");
     if (!isValidEmail(form.email)) return fail("email", "Digite um e-mail válido.");
     if (!onlyDigits(form.cpf)) return fail("cpf", "Preencha seu CPF.");
     if (!isValidCPF(form.cpf)) return fail("cpf", "CPF inválido. Verifique e tente novamente.");
     if (!form.rg.trim()) return fail("rg", "Preencha seu RG.");
     if (!form.birthDate) return fail("birthDate", "Informe sua data de nascimento.");
+
+    // Birth date validation: 16-100 years
+    const birth = new Date(form.birthDate);
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) age--;
+    if (age < 16) return fail("birthDate", "Você precisa ter pelo menos 16 anos para contratar.");
+    if (age > 100) return fail("birthDate", "Verifique a data de nascimento informada.");
+
     if (!form.phonePrimary.trim()) return fail("phonePrimary", "Preencha seu celular principal.");
     if (!isValidPhoneBR(form.phonePrimary)) return fail("phonePrimary", "Celular principal inválido.");
     if (!form.phoneSecondary.trim()) return fail("phoneSecondary", "Preencha seu telefone secundário.");
@@ -507,16 +536,35 @@ const ContrateFisica = () => {
     return true;
   };
 
+  const updateStep = (steps: SubmissionStep[], id: string, update: Partial<SubmissionStep>): SubmissionStep[] =>
+    steps.map((s) => (s.id === id ? { ...s, ...update } : s));
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateAll()) return;
     setSubmitting(true);
 
-    try {
-      // reCAPTCHA TEMPORARILY DISABLED
-      const recaptchaToken = "";
+    const steps: SubmissionStep[] = [
+      { id: "validate", label: "Validando dados", status: "running" },
+      { id: "metadata", label: "Coletando metadados", status: "pending" },
+      { id: "docs", label: "Enviando documentos", status: "pending" },
+      { id: "save", label: "Salvando formulário", status: "pending" },
+      { id: "email", label: "Enviando notificação por e-mail", status: "pending" },
+    ];
+    setProgressSteps([...steps]);
+    setShowProgress(true);
 
-      // Collect metadata
+    try {
+      // Step 1: Validate (already done)
+      steps[0].status = "done";
+      steps[0].detail = "Todos os campos validados com sucesso.";
+      setProgressSteps([...steps]);
+
+      // Step 2: Metadata
+      steps[1].status = "running";
+      setProgressSteps([...steps]);
+
+      const recaptchaToken = "";
       let ipAddress = "";
       try {
         const ipRes = await fetch("https://api64.ipify.org?format=json");
@@ -532,42 +580,48 @@ const ContrateFisica = () => {
 
       const userAgent = navigator.userAgent;
       const uaFriendly = parseUserAgent(navigator.userAgent);
-
-      let geolocation = "";
-      try {
-        const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
-          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 })
-        );
-        geolocation = `${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`;
-      } catch { /* user denied or timeout */ }
-
+      const geolocation = geoResult; // Already collected proactively
       const collectedAt = new Date().toISOString();
 
-      // Upload documents to storage
+      steps[1].status = "done";
+      steps[1].detail = "IP, navegador e localização coletados.";
+      setProgressSteps([...steps]);
+
+      // Step 3: Upload documents
+      steps[2].status = "running";
+      setProgressSteps([...steps]);
+
       let doc1Url = "";
       let doc1Name = "";
       let doc2Url = "";
       let doc2Name = "";
 
-      const uploadDoc = async (file: File, slot: number) => {
+      const uploadDoc = async (file: File) => {
         const ext = file.name.split(".").pop() || "jpg";
         const path = `${crypto.randomUUID()}.${ext}`;
-        const { data, error } = await supabase.storage.from("documents").upload(path, file);
+        const { error } = await supabase.storage.from("documents").upload(path, file);
         if (error) throw new Error(`Erro ao enviar documento: ${error.message}`);
-        // Store the storage path (not public URL) since bucket is private
         return { url: `documents/${path}`, name: file.name };
       };
 
       if (docUpload.doc1) {
-        const r = await uploadDoc(docUpload.doc1.file, 1);
+        steps[2].detail = `Enviando: ${docUpload.doc1.file.name}`;
+        setProgressSteps([...steps]);
+        const r = await uploadDoc(docUpload.doc1.file);
         doc1Url = r.url;
         doc1Name = r.name;
       }
       if (docUpload.doc2) {
-        const r = await uploadDoc(docUpload.doc2.file, 2);
+        steps[2].detail = `Enviando: ${docUpload.doc2.file.name}`;
+        setProgressSteps([...steps]);
+        const r = await uploadDoc(docUpload.doc2.file);
         doc2Url = r.url;
         doc2Name = r.name;
       }
+
+      steps[2].status = "done";
+      steps[2].detail = docUpload.doc1 ? `${docUpload.doc2 ? "2 documentos enviados" : "1 documento enviado"}.` : "Nenhum documento para enviar.";
+      setProgressSteps([...steps]);
 
       // Build periods string
       const periodsArr = [];
@@ -587,6 +641,10 @@ const ContrateFisica = () => {
         }
         couponDesc = parts.join("; ");
       }
+
+      // Step 4: Save to database
+      steps[3].status = "running";
+      setProgressSteps([...steps]);
 
       const submission = {
         full_name: form.fullName.trim(),
@@ -647,22 +705,37 @@ const ContrateFisica = () => {
         status: "novo",
       };
 
-      // Save to database
       const { error: dbError } = await supabase.from("form_submissions").insert(submission);
       if (dbError) throw new Error(`Erro ao salvar: ${dbError.message}`);
 
-      // Send email via edge function
+      steps[3].status = "done";
+      steps[3].detail = "Dados salvos com sucesso.";
+      setProgressSteps([...steps]);
+
+      // Step 5: Send email
+      steps[4].status = "running";
+      setProgressSteps([...steps]);
+
       try {
         await supabase.functions.invoke("send-form-email", {
           body: { submission, recaptchaToken },
         });
+        steps[4].status = "done";
+        steps[4].detail = "Notificação enviada.";
       } catch (emailErr) {
         console.error("Email sending failed (form was saved):", emailErr);
+        steps[4].status = "done";
+        steps[4].detail = "Formulário salvo (notificação pendente).";
       }
+      setProgressSteps([...steps]);
 
+      // Wait briefly to show completion, then close
+      await new Promise((r) => setTimeout(r, 1500));
+      setShowProgress(false);
       showAlert("success", "Formulário enviado com sucesso! Em breve entraremos em contato.");
     } catch (err: any) {
       console.error("Submit error:", err);
+      setShowProgress(false);
       showAlert("danger", err.message || "Erro ao enviar o formulário. Tente novamente.");
     } finally {
       setSubmitting(false);
@@ -694,6 +767,7 @@ const ContrateFisica = () => {
 
   return (
     <main>
+      <SubmissionProgress steps={progressSteps} visible={showProgress} />
       <PageTitle title="Contrate agora" backgroundImage="/images/title-contato.jpg" />
 
       <section id="down-section" className="py-20">
@@ -736,6 +810,7 @@ const ContrateFisica = () => {
                   <div>
                     <label className="block text-sm font-medium mb-2">Nome completo*</label>
                     <input type="text" placeholder="Nome completo" value={form.fullName}
+                      data-field="fullName"
                       onChange={(e) => setField("fullName", e.target.value)}
                       className={inputCls("fullName")} />
                   </div>
@@ -862,9 +937,10 @@ const ContrateFisica = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Número*</label>
-                    <input type="text" placeholder="Número" inputMode="numeric"
+                    <input type="text" placeholder="Número" inputMode="numeric" maxLength={8}
+                      data-field="addressNumber"
                       value={form.addressNumber}
-                      onChange={(e) => setField("addressNumber", e.target.value)}
+                      onChange={(e) => setField("addressNumber", e.target.value.slice(0, 8))}
                       className={inputCls("addressNumber")} />
                   </div>
                   <div>
@@ -1050,9 +1126,9 @@ const ContrateFisica = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Número (instalação)*</label>
-                    <input type="text" placeholder="Número" inputMode="numeric"
+                    <input type="text" placeholder="Número" inputMode="numeric" maxLength={8}
                       value={form.installNumber}
-                      onChange={(e) => setField("installNumber", e.target.value)}
+                      onChange={(e) => setField("installNumber", e.target.value.slice(0, 8))}
                       disabled={form.installAddressChoice === "same"}
                       className={inputCls("installNumber", form.installAddressChoice === "same" ? "bg-muted opacity-60" : "")} />
                   </div>
@@ -1222,7 +1298,7 @@ const ContrateFisica = () => {
 
                   {/* ═══ SUBMIT ═══ */}
                   {/* Collected data display */}
-                  <CollectedDataFooter />
+                  <CollectedDataFooter geolocation={geoResult} />
 
                   <div className="md:col-span-2">
                     <div className="flex flex-col md:flex-row items-center justify-between gap-6 mt-4">
