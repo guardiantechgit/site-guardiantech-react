@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Send } from "lucide-react";
+import { Send, Loader2 } from "lucide-react";
 import PageTitle from "@/components/PageTitle";
 import AnimatedSection from "@/components/AnimatedSection";
 import { onlyDigits, formatPhoneBR, formatCPF, formatCEP, formatPlate, sanitizeUsername } from "@/lib/masks";
@@ -9,6 +9,7 @@ import { computeQuote, type QuoteResult } from "@/lib/quoteCalculator";
 import { lookupViaCep } from "@/lib/viaCep";
 import { CONTRACT_TEXT } from "@/lib/contractText";
 import { useDocumentUpload } from "@/hooks/useDocumentUpload";
+import { supabase } from "@/integrations/supabase/client";
 
 // ── Types ──
 interface FormData {
@@ -93,6 +94,7 @@ const MAX_DAYS_OPTIONS = [
 ];
 
 const ContrateFisica = () => {
+  const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState<FormData>(initialForm);
   const [alertMsg, setAlertMsg] = useState<{ type: "danger" | "warning" | "success" | "info"; text: string } | null>(null);
   const [invalidFields, setInvalidFields] = useState<Set<string>>(new Set());
@@ -319,10 +321,171 @@ const ContrateFisica = () => {
     return true;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateAll()) return;
-    showAlert("success", "Formulário validado com sucesso! (Envio será implementado em breve)");
+    setSubmitting(true);
+
+    try {
+      // Collect metadata
+      let ipAddress = "";
+      try {
+        const ipRes = await fetch("https://api.ipify.org?format=json");
+        const ipData = await ipRes.json();
+        ipAddress = ipData.ip || "";
+      } catch { /* ignore */ }
+
+      const userAgent = navigator.userAgent;
+      const uaFriendly = (() => {
+        const ua = navigator.userAgent;
+        let browser = "Navegador desconhecido";
+        let os = "SO desconhecido";
+        if (ua.includes("Firefox/")) browser = "Firefox";
+        else if (ua.includes("Edg/")) browser = "Edge";
+        else if (ua.includes("Chrome/")) browser = "Chrome";
+        else if (ua.includes("Safari/")) browser = "Safari";
+        if (ua.includes("Windows")) os = "Windows";
+        else if (ua.includes("Mac OS")) os = "macOS";
+        else if (ua.includes("Android")) os = "Android";
+        else if (ua.includes("iPhone") || ua.includes("iPad")) os = "iOS";
+        else if (ua.includes("Linux")) os = "Linux";
+        return `${browser} — ${os}`;
+      })();
+
+      let geolocation = "";
+      try {
+        const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
+          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 })
+        );
+        geolocation = `${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`;
+      } catch { /* user denied or timeout */ }
+
+      const collectedAt = new Date().toISOString();
+
+      // Upload documents to storage
+      let doc1Url = "";
+      let doc1Name = "";
+      let doc2Url = "";
+      let doc2Name = "";
+
+      const uploadDoc = async (file: File, slot: number) => {
+        const ext = file.name.split(".").pop() || "jpg";
+        const path = `${Date.now()}_${slot}.${ext}`;
+        const { data, error } = await supabase.storage.from("documents").upload(path, file);
+        if (error) throw new Error(`Erro ao enviar documento: ${error.message}`);
+        const { data: urlData } = supabase.storage.from("documents").getPublicUrl(path);
+        return { url: urlData.publicUrl, name: file.name };
+      };
+
+      if (docUpload.doc1) {
+        const r = await uploadDoc(docUpload.doc1.file, 1);
+        doc1Url = r.url;
+        doc1Name = r.name;
+      }
+      if (docUpload.doc2) {
+        const r = await uploadDoc(docUpload.doc2.file, 2);
+        doc2Url = r.url;
+        doc2Name = r.name;
+      }
+
+      // Build periods string
+      const periodsArr = [];
+      if (periods.manha) periodsArr.push("Manhã");
+      if (periods.tarde) periodsArr.push("Tarde");
+      if (periods.noite) periodsArr.push("Noite");
+
+      // Coupon description
+      let couponDesc = "";
+      if (couponApplied) {
+        const parts = [];
+        if (couponApplied.install_discount_enabled) {
+          parts.push(`Instalação: ${couponApplied.install_discount_mode === "percent" ? couponApplied.install_discount_value + "%" : "R$ " + couponApplied.install_discount_value.toFixed(2)} de desconto`);
+        }
+        if (couponApplied.monthly_discount_enabled) {
+          parts.push(`Mensalidade: ${couponApplied.monthly_discount_mode === "percent" ? couponApplied.monthly_discount_value + "%" : "R$ " + couponApplied.monthly_discount_value.toFixed(2)} de desconto`);
+        }
+        couponDesc = parts.join("; ");
+      }
+
+      const submission = {
+        full_name: form.fullName.trim(),
+        email: form.email.trim(),
+        cpf: form.cpf,
+        rg: form.rg.trim(),
+        birth_date: form.birthDate,
+        phone_primary: form.phonePrimary,
+        phone_secondary: form.phoneSecondary,
+        platform_username: sanitizeUsername(form.platformUsername),
+        address_cep: form.addressCep,
+        address_uf: form.addressUf,
+        address_city: form.addressCity,
+        address_neighborhood: form.addressNeighborhood,
+        address_street: form.addressStreet,
+        address_number: form.addressNumber,
+        address_complement: form.addressComplement,
+        address_note: form.addressNote,
+        emergency_name: form.emergencyName.trim(),
+        emergency_phone: form.emergencyPhone,
+        emergency_relationship: form.emergencyRelationship.trim(),
+        vehicle_type: form.vehicleType,
+        vehicle_fuel: form.vehicleFuel,
+        vehicle_color: form.vehicleColor,
+        vehicle_plate: form.vehiclePlate.toUpperCase(),
+        vehicle_brand: form.vehicleBrand.trim(),
+        vehicle_model: form.vehicleModel.trim(),
+        vehicle_year: form.vehicleYear.trim(),
+        vehicle_max_days: form.vehicleMaxDays,
+        remote_blocking: form.remoteBlocking,
+        install_address_choice: form.installAddressChoice,
+        install_cep: form.installAddressChoice === "same" ? form.addressCep : form.installCep,
+        install_uf: form.installAddressChoice === "same" ? form.addressUf : form.installUf,
+        install_city: form.installAddressChoice === "same" ? form.addressCity : form.installCity,
+        install_neighborhood: form.installAddressChoice === "same" ? form.addressNeighborhood : form.installNeighborhood,
+        install_street: form.installAddressChoice === "same" ? form.addressStreet : form.installStreet,
+        install_number: form.installAddressChoice === "same" ? form.addressNumber : form.installNumber,
+        install_complement: form.installAddressChoice === "same" ? form.addressComplement : form.installComplement,
+        install_note: form.installNote,
+        install_periods: periodsArr.join(", "),
+        installation_payment: form.installationPayment,
+        monthly_payment: form.monthlyPayment,
+        monthly_due_day: form.monthlyDueDay,
+        plan_name: quote.plan,
+        monthly_value: quote.monthlyLabel,
+        install_value: quote.installLabel,
+        coupon_code: couponApplied?.code || null,
+        coupon_description: couponDesc || null,
+        doc1_url: doc1Url || null,
+        doc1_name: doc1Name || null,
+        doc2_url: doc2Url || null,
+        doc2_name: doc2Name || null,
+        ip_address: ipAddress,
+        user_agent: userAgent,
+        user_agent_friendly: uaFriendly,
+        geolocation: geolocation || null,
+        collected_at: collectedAt,
+        status: "novo",
+      };
+
+      // Save to database
+      const { error: dbError } = await supabase.from("form_submissions").insert(submission);
+      if (dbError) throw new Error(`Erro ao salvar: ${dbError.message}`);
+
+      // Send email via edge function
+      try {
+        await supabase.functions.invoke("send-form-email", {
+          body: { submission },
+        });
+      } catch (emailErr) {
+        console.error("Email sending failed (form was saved):", emailErr);
+      }
+
+      showAlert("success", "Formulário enviado com sucesso! Em breve entraremos em contato.");
+    } catch (err: any) {
+      console.error("Submit error:", err);
+      showAlert("danger", err.message || "Erro ao enviar o formulário. Tente novamente.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // ── Render helpers ──
@@ -914,15 +1077,40 @@ const ContrateFisica = () => {
                   </div>
 
                   {/* ═══ SUBMIT ═══ */}
+                  {/* Collected data display */}
+                  <div className="md:col-span-2 mt-2">
+                    <small className="block text-medium-gray text-xs leading-relaxed">
+                      <strong>Dados coletados:</strong>{" "}
+                      IP: <span id="gtCollectedIp">Carregando...</span> — 
+                      Navegador/SO: <span id="gtCollectedAgent">{(() => {
+                        const ua = navigator.userAgent;
+                        let browser = "Desconhecido";
+                        let os = "Desconhecido";
+                        if (ua.includes("Firefox/")) browser = "Firefox";
+                        else if (ua.includes("Edg/")) browser = "Edge";
+                        else if (ua.includes("Chrome/")) browser = "Chrome";
+                        else if (ua.includes("Safari/")) browser = "Safari";
+                        if (ua.includes("Windows")) os = "Windows";
+                        else if (ua.includes("Mac OS")) os = "macOS";
+                        else if (ua.includes("Android")) os = "Android";
+                        else if (ua.includes("iPhone") || ua.includes("iPad")) os = "iOS";
+                        else if (ua.includes("Linux")) os = "Linux";
+                        return `${browser} — ${os}`;
+                      })()}</span> — 
+                      Data/Hora: {new Date().toLocaleString("pt-BR")}
+                    </small>
+                  </div>
+
                   <div className="md:col-span-2">
                     <div className="flex flex-col md:flex-row items-center justify-between gap-6 mt-4">
                       <p className="text-xs text-medium-gray text-center md:text-left">
                         Ao enviar, você confirma a contratação e autoriza contato para agendamento. Dados tratados conforme a{" "}
                         <a href="https://www.gov.br/esporte/pt-br/acesso-a-informacao/lgpd" target="_blank" rel="noreferrer" className="underline">LGPD</a>.
                       </p>
-                      <button type="submit"
-                        className="bg-base-color text-white px-8 py-3 rounded-full font-medium shadow hover:opacity-90 transition text-sm whitespace-nowrap">
-                        Enviar solicitação
+                      <button type="submit" disabled={submitting}
+                        className="bg-base-color text-white px-8 py-3 rounded-full font-medium shadow hover:opacity-90 transition text-sm whitespace-nowrap disabled:opacity-60 flex items-center gap-2">
+                        {submitting && <Loader2 size={16} className="animate-spin" />}
+                        {submitting ? "Enviando..." : "Enviar solicitação"}
                       </button>
                     </div>
                   </div>
