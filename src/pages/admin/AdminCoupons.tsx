@@ -286,7 +286,7 @@ const AdminCoupons = () => {
                         type="text" inputMode="numeric"
                         value={form.commission_value}
                         onChange={(e) => setForm({ ...form, commission_value: formatMaskedValue(e.target.value, form.commission_mode) })}
-                        placeholder={form.commission_mode === "percent" ? "10" : "50,00"}
+                        placeholder=""
                         className={`${form.commission_mode === "fixed" ? "pl-10" : ""} [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
                       />
                       {form.commission_mode === "percent" && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>}
@@ -317,7 +317,7 @@ const AdminCoupons = () => {
                       type="text" inputMode="numeric"
                       value={form.install_discount_value}
                       onChange={(e) => setForm({ ...form, install_discount_value: formatMaskedValue(e.target.value, form.install_discount_mode) })}
-                      placeholder={form.install_discount_mode === "percent" ? "10" : "50,00"}
+                      placeholder=""
                       className={`${form.install_discount_mode === "fixed" ? "pl-10" : ""} [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
                     />
                     {form.install_discount_mode === "percent" && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>}
@@ -347,7 +347,7 @@ const AdminCoupons = () => {
                       type="text" inputMode="numeric"
                       value={form.monthly_discount_value}
                       onChange={(e) => setForm({ ...form, monthly_discount_value: formatMaskedValue(e.target.value, form.monthly_discount_mode) })}
-                      placeholder={form.monthly_discount_mode === "percent" ? "10" : "15,00"}
+                      placeholder=""
                       className={`${form.monthly_discount_mode === "fixed" ? "pl-10" : ""} [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
                     />
                     {form.monthly_discount_mode === "percent" && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>}
