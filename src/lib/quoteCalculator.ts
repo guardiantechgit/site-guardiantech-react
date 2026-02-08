@@ -24,7 +24,8 @@ function applyDiscount(
 
   if (mode === "percent") {
     final = amount * (1 - value / 100);
-    label = value.toString().replace(".", ",").replace(/,?0+$/, "") + "%";
+    const valStr = value.toString();
+    label = (valStr.includes(".") ? valStr.replace(".", ",").replace(/,?0+$/, "") : valStr) + "%";
   } else if (mode === "value") {
     final = amount - value;
     label = "R$ " + brl(value);
