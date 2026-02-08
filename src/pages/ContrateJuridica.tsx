@@ -534,11 +534,12 @@ const ContrateJuridica = () => {
         steps[2].detail = `Enviando: ${docUpload.doc1.file.name}`;
         setProgressSteps([...steps]);
         const ext = docUpload.doc1.file.name.split(".").pop() || "jpg";
+        const cnpjDigits = form.cnpj.replace(/\D/g, "");
         const path = `${crypto.randomUUID()}.${ext}`;
         const { error } = await supabase.storage.from("documents").upload(path, docUpload.doc1.file);
         if (error) throw new Error(`Erro ao enviar documento: ${error.message}`);
         doc1Url = `documents/${path}`;
-        doc1Name = docUpload.doc1.file.name;
+        doc1Name = `DOC-PJ-${cnpjDigits}-01.${ext}`;
       }
 
       steps[2].status = "done"; steps[2].detail = docUpload.doc1 ? "1 documento enviado." : "Nenhum documento.";
