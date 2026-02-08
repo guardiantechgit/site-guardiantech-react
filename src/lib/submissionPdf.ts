@@ -361,5 +361,23 @@ export async function generateSubmissionPDF(s: Submission) {
     </body></html>
   `);
   win.document.close();
-  setTimeout(() => win.print(), 600);
+
+  // Wait for all images to load, then open print dialog
+  const images = win.document.querySelectorAll("img");
+  if (images.length === 0) {
+    setTimeout(() => win.print(), 400);
+  } else {
+    let loaded = 0;
+    const total = images.length;
+    const onReady = () => {
+      loaded++;
+      if (loaded >= total) setTimeout(() => win.print(), 200);
+    };
+    images.forEach((img) => {
+      if (img.complete) onReady();
+      else { img.onload = onReady; img.onerror = onReady; }
+    });
+    // Fallback timeout
+    setTimeout(() => win.print(), 5000);
+  }
 }
