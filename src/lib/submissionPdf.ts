@@ -228,23 +228,23 @@ export async function generateSubmissionPDF(s: Submission) {
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap');
       * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { font-family: 'Be Vietnam Pro', Arial, sans-serif; padding: 0; color: #333; font-size: 12px; }
+      body { font-family: 'Be Vietnam Pro', Arial, sans-serif; padding: 0; color: #333; font-size: 10px; }
 
       .print-header {
         border-bottom: 3px solid #AF985A;
-        padding: 20px 28px;
+        padding: 10px 20px;
         display: flex;
         align-items: center;
         justify-content: space-between;
       }
-      .print-header img { height: 55px; }
-      .print-header-info { text-align: right; font-size: 11px; color: #777; }
-      .print-header-info strong { color: #AF985A; font-size: 14px; display: block; margin-bottom: 2px; }
+      .print-header img { height: 40px; }
+      .print-header-info { text-align: right; font-size: 9px; color: #777; }
+      .print-header-info strong { color: #AF985A; font-size: 11px; display: block; margin-bottom: 1px; }
 
       .print-title {
         border-bottom: 1px solid #e5e5e5;
-        padding: 10px 28px;
-        font-size: 13px;
+        padding: 5px 20px;
+        font-size: 11px;
         font-weight: 700;
         letter-spacing: 0.5px;
         color: #AF985A;
@@ -252,9 +252,9 @@ export async function generateSubmissionPDF(s: Submission) {
       }
 
       .status-bar {
-        padding: 8px 28px;
+        padding: 3px 20px;
         border-bottom: 1px solid #e5e5e5;
-        font-size: 11px;
+        font-size: 9px;
         color: #555;
         display: flex;
         justify-content: space-between;
@@ -262,9 +262,9 @@ export async function generateSubmissionPDF(s: Submission) {
       }
       .status-badge {
         display: inline-block;
-        padding: 3px 10px;
-        border-radius: 12px;
-        font-size: 10px;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 8px;
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.3px;
@@ -272,18 +272,18 @@ export async function generateSubmissionPDF(s: Submission) {
         color: #555;
       }
 
-      .print-body { padding: 16px 28px; }
+      .print-body { padding: 6px 20px; }
 
       .section {
-        margin-bottom: 16px;
+        margin-bottom: 5px;
         border: 1px solid #e5e5e5;
-        border-radius: 8px;
+        border-radius: 5px;
         overflow: hidden;
         page-break-inside: avoid;
       }
       .section-title {
-        padding: 8px 14px;
-        font-size: 11px;
+        padding: 3px 10px;
+        font-size: 8px;
         font-weight: 700;
         color: #AF985A;
         text-transform: uppercase;
@@ -297,59 +297,60 @@ export async function generateSubmissionPDF(s: Submission) {
         gap: 0;
       }
       .field {
-        padding: 8px 14px;
+        padding: 2px 10px;
         border-bottom: 1px solid #f0f0f0;
         border-right: 1px solid #f0f0f0;
       }
       .field:nth-child(2n) { border-right: none; }
       .field-label {
         display: block;
-        font-size: 9px;
+        font-size: 7px;
         font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.4px;
         color: #999;
-        margin-bottom: 2px;
+        margin-bottom: 0;
       }
       .field-value {
         display: block;
-        font-size: 12px;
+        font-size: 10px;
         font-weight: 500;
         color: #1a1a1a;
+        line-height: 1.2;
       }
 
       .cancellation-block {
-        margin: 12px 0;
-        padding: 10px 14px;
+        margin: 4px 0;
+        padding: 5px 10px;
         border: 1px solid #f5c6cb;
         border-left: 4px solid #dc3545;
-        border-radius: 6px;
+        border-radius: 5px;
         background: #fff5f5;
         page-break-inside: avoid;
       }
       .cancellation-label {
         display: block;
-        font-size: 9px;
+        font-size: 7px;
         font-weight: 700;
         text-transform: uppercase;
         color: #dc3545;
-        margin-bottom: 4px;
+        margin-bottom: 2px;
       }
-      .cancellation-block p { font-size: 12px; color: #721c24; }
+      .cancellation-block p { font-size: 10px; color: #721c24; }
 
       .page-break { page-break-before: always; }
 
-      .docs-body { padding: 20px 28px; }
+      .docs-body { padding: 12px 20px; }
       .doc-item { 
-        margin-bottom: 20px; 
+        margin-bottom: 12px; 
         border: 1px solid #e5e5e5; 
-        border-radius: 8px; 
+        border-radius: 5px; 
         overflow: hidden;
         page-break-inside: avoid;
       }
       .doc-name {
-        padding: 8px 14px;
-        font-size: 11px;
+        padding: 3px 10px;
+        font-size: 8px;
         font-weight: 700;
         color: #AF985A;
         text-transform: uppercase;
@@ -360,8 +361,8 @@ export async function generateSubmissionPDF(s: Submission) {
       .doc-image { 
         display: block; 
         max-width: 100%; 
-        margin: 16px auto; 
-        padding: 0 16px;
+        margin: 8px auto; 
+        padding: 0 8px;
       }
       .doc-pdf {
         width: 100%;
@@ -373,17 +374,18 @@ export async function generateSubmissionPDF(s: Submission) {
         page-break-before: always;
       }
       .doc-note {
-        padding: 16px;
+        padding: 10px;
         text-align: center;
         color: #888;
         font-style: italic;
+        font-size: 9px;
       }
 
       .print-footer {
-        margin-top: 32px;
-        padding: 16px 32px;
+        margin-top: 8px;
+        padding: 6px 20px;
         border-top: 2px solid #ddd;
-        font-size: 10px;
+        font-size: 8px;
         color: #999;
         text-align: center;
       }
