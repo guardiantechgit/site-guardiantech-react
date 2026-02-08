@@ -16,6 +16,33 @@ function escapeHtml(str: string | null | undefined): string {
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+// Friendly label mappings for raw form values
+const VEHICLE_TYPE_LABELS: Record<string, string> = {
+  moto: "Moto", carro: "Carro", pickup: "Pickup", caminhonete: "Caminhonete",
+  van: "Van", caminhao: "Caminhão", trator_maquina: "Trator / Máquina agrícola",
+  embarcacao: "Embarcação", aeronave: "Aeronave / Helicóptero", outro: "Outro",
+};
+
+const MAX_DAYS_LABELS: Record<string, string> = {
+  nenhum_dia: "Nenhum dia", "De 1 a 3 dias": "De 1 a 3 dias",
+  "De 3 a 5 dias": "De 3 a 5 dias", "De 5 a 10 dias": "De 5 a 10 dias",
+  "Mais de 10 dias": "Mais de 10 dias",
+};
+
+const INSTALL_CHOICE_LABELS: Record<string, string> = {
+  same: "O mesmo", other: "Outro",
+};
+
+function friendlyLabel(value: string | null | undefined, map: Record<string, string>): string | null | undefined {
+  if (!value) return value;
+  return map[value] || (value.charAt(0).toUpperCase() + value.slice(1));
+}
+
+function capitalize(value: string | null | undefined): string | null | undefined {
+  if (!value) return value;
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const CPF_RE = /^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/;
 const PHONE_RE = /^[\d\s().+-]{8,20}$/;
@@ -89,7 +116,8 @@ serve(async (req: Request) => {
     if (!d.email || typeof d.email !== "string" || !EMAIL_RE.test(d.email.trim())) {
       return new Response(JSON.stringify({ error: "E-mail inválido." }), { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } });
     }
-    if (!d.cpf || typeof d.cpf !== "string" || !CPF_RE.test(d.cpf.trim())) {
+    const isPJForm = d.form_type === "pj";
+    if (!isPJForm && (!d.cpf || typeof d.cpf !== "string" || !CPF_RE.test(d.cpf.trim()))) {
       return new Response(JSON.stringify({ error: "CPF inválido." }), { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } });
     }
     if (!d.phone_primary || typeof d.phone_primary !== "string" || !PHONE_RE.test(d.phone_primary.replace(/\D/g, ""))) {
@@ -160,25 +188,49 @@ serve(async (req: Request) => {
       }
     }
 
+    const isPJ = d.form_type === "pj";
+    const formTitle = isPJ ? "Nova Contratação — Pessoa Jurídica" : "Nova Contratação — Pessoa Física";
+
+    const personalSection = isPJ
+      ? section("Dados da Empresa", [
+          ["Razão Social", d.razao_social || d.full_name],
+          ["Nome Fantasia", d.nome_fantasia],
+          ["E-mail", d.email],
+          ["CNPJ", d.cnpj],
+          ["Inscrição Estadual", d.ie_isento ? "ISENTO" : d.ie],
+          ["Celular", d.phone_primary],
+          ["Telefone 2", d.phone_secondary],
+          ["Usuário Plataforma", d.platform_username],
+        ])
+      : section("Dados Pessoais", [
+          ["Nome", d.full_name],
+          ["E-mail", d.email],
+          ["CPF", d.cpf],
+          ["RG", d.rg],
+          ["Nascimento", d.birth_date],
+          ["Celular", d.phone_primary],
+          ["Telefone 2", d.phone_secondary],
+          ["Usuário Plataforma", d.platform_username],
+        ]);
+
+    const financialContactSection = isPJ
+      ? section("Contato Financeiro", [
+          ["Nome", d.financial_name],
+          ["Telefone", d.financial_phone],
+          ["E-mail", d.financial_email],
+        ])
+      : "";
+
     const html = `
 <!DOCTYPE html>
 <html>
 <body style="font-family:'Segoe UI',Arial,sans-serif;color:#333;max-width:700px;margin:0 auto;padding:20px;">
   <div style="text-align:center;margin-bottom:24px;">
-    <h1 style="color:#AF985A;font-size:20px;margin:0;">Nova Contratação — Pessoa Física</h1>
+    <h1 style="color:#AF985A;font-size:20px;margin:0;">${formTitle}</h1>
     <p style="color:#888;font-size:13px;margin:4px 0 0;">Formulário enviado em ${escapeHtml(d.collected_at ? new Date(d.collected_at).toLocaleString("pt-BR") : new Date().toLocaleString("pt-BR"))}</p>
   </div>
 
-  ${section("Dados Pessoais", [
-    ["Nome", d.full_name],
-    ["E-mail", d.email],
-    ["CPF", d.cpf],
-    ["RG", d.rg],
-    ["Nascimento", d.birth_date],
-    ["Celular", d.phone_primary],
-    ["Telefone 2", d.phone_secondary],
-    ["Usuário Plataforma", d.platform_username],
-  ])}
+  ${personalSection}
 
   ${section("Endereço", [
     ["CEP", d.address_cep],
@@ -197,20 +249,22 @@ serve(async (req: Request) => {
     ["Parentesco", d.emergency_relationship],
   ])}
 
+  ${financialContactSection}
+
   ${section("Veículo", [
-    ["Tipo", d.vehicle_type],
+    ["Tipo", friendlyLabel(d.vehicle_type, VEHICLE_TYPE_LABELS)],
     ["Marca", d.vehicle_brand],
     ["Modelo", d.vehicle_model],
     ["Ano", d.vehicle_year],
     ["Cor", d.vehicle_color],
     ["Combustível", d.vehicle_fuel],
     ["Placa", d.vehicle_plate],
-    ["Dias máx. parado", d.vehicle_max_days],
-    ["Bloqueio remoto", d.remote_blocking],
+    ["Dias máx. parado", friendlyLabel(d.vehicle_max_days, MAX_DAYS_LABELS)],
+    ["Bloqueio remoto", capitalize(d.remote_blocking)],
   ])}
 
   ${section("Instalação", [
-    ["Local", d.install_address_choice],
+    ["Local", friendlyLabel(d.install_address_choice, INSTALL_CHOICE_LABELS)],
     ["CEP", d.install_cep],
     ["Rua", d.install_street],
     ["Nº", d.install_number],
@@ -247,10 +301,11 @@ serve(async (req: Request) => {
 </body>
 </html>`;
 
+    const subjectName = isPJ ? (d.razao_social || d.full_name) : d.full_name;
     const emailPayload: any = {
       from: "GuardianTech <noreply@guardiantech.site>",
       to: ["contato.guardiantech@gmail.com", "rastreamento@guardiantech.site"],
-      subject: `Nova contratação: ${d.full_name.substring(0, 100)} — ${d.vehicle_plate || "Sem placa"}`,
+      subject: `Nova contratação (${isPJ ? "PJ" : "PF"}): ${(subjectName || "").substring(0, 100)} — ${d.vehicle_plate || "Sem placa"}`,
       html,
     };
 
