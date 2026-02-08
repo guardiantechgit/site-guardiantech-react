@@ -10,21 +10,41 @@ const SiteLoader = ({ children }: { children: React.ReactNode }) => {
   const waitForImages = useCallback(() => {
     setLoading(true);
 
-    // Small delay to let the new route render its images into the DOM
-    const raf = requestAnimationFrame(() => {
-      const imgs = Array.from(document.querySelectorAll("img"));
-      const bgEls = Array.from(document.querySelectorAll<HTMLElement>("[style*='background-image']"));
+    // Use a longer delay to let the new route fully render images into the DOM
+    // A single rAF fires too early — images from lazy/deferred components may not be in the DOM yet
+    const timer = setTimeout(() => {
+      const collectSources = (): string[] => {
+        const allSrcs: string[] = [];
 
-      const allSrcs: string[] = [];
+        // <img> elements
+        const imgs = Array.from(document.querySelectorAll("img"));
+        imgs.forEach((img) => {
+          if (img.src && !img.complete) allSrcs.push(img.src);
+        });
 
-      imgs.forEach((img) => {
-        if (img.src && !img.complete) allSrcs.push(img.src);
-      });
+        // Inline background-image styles
+        const bgEls = Array.from(document.querySelectorAll<HTMLElement>("[style*='background-image']"));
+        bgEls.forEach((el) => {
+          const match = el.style.backgroundImage.match(/url\(["']?(.+?)["']?\)/);
+          if (match?.[1]) allSrcs.push(match[1]);
+        });
 
-      bgEls.forEach((el) => {
-        const match = el.style.backgroundImage.match(/url\(["']?(.+?)["']?\)/);
-        if (match?.[1]) allSrcs.push(match[1]);
-      });
+        // CSS background-image from computed styles on elements with known bg classes
+        const bgCandidates = Array.from(document.querySelectorAll<HTMLElement>(
+          "[class*='bg-[url'], [class*='background'], section, .hero, .banner, [data-bg]"
+        ));
+        bgCandidates.forEach((el) => {
+          const computed = getComputedStyle(el).backgroundImage;
+          if (computed && computed !== "none") {
+            const match = computed.match(/url\(["']?(.+?)["']?\)/);
+            if (match?.[1] && !allSrcs.includes(match[1])) allSrcs.push(match[1]);
+          }
+        });
+
+        return allSrcs;
+      };
+
+      const allSrcs = collectSources();
 
       if (allSrcs.length === 0) {
         setLoading(false);
@@ -45,12 +65,12 @@ const SiteLoader = ({ children }: { children: React.ReactNode }) => {
         img.onerror = checkDone;
         img.src = src;
       });
-    });
+    }, 150); // 150ms delay gives time for route components to mount and render images
 
     // Fallback timeout
     const timeout = setTimeout(() => setLoading(false), 8000);
     return () => {
-      cancelAnimationFrame(raf);
+      clearTimeout(timer);
       clearTimeout(timeout);
     };
   }, []);

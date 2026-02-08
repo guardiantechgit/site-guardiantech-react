@@ -441,8 +441,7 @@ const ContrateJuridica = () => {
     if (!form.ieIsento && !form.ie.trim()) return fail("ie", "Preencha a Inscrição Estadual ou marque Isento.");
     if (!form.phonePrimary.trim()) return fail("phonePrimary", "Preencha o celular principal.");
     if (!isValidPhoneBR(form.phonePrimary)) return fail("phonePrimary", "Celular principal inválido.");
-    if (!form.phoneSecondary.trim()) return fail("phoneSecondary", "Preencha o telefone secundário.");
-    if (!isValidPhoneBR(form.phoneSecondary)) return fail("phoneSecondary", "Telefone secundário inválido.");
+    if (form.phoneSecondary.trim() && !isValidPhoneBR(form.phoneSecondary)) return fail("phoneSecondary", "Telefone secundário inválido.");
     if (!form.platformUsername.trim()) return fail("platformUsername", "Digite o nome de usuário desejado.");
     if (sanitizeUsername(form.platformUsername).length === 0) return fail("platformUsername", "Nome de usuário inválido.");
 
@@ -1102,8 +1101,8 @@ const ContrateJuridica = () => {
                       <div className="mt-4">
                         <div className="flex flex-col sm:flex-row gap-3">
                           <input type="text" placeholder="Digite aqui e clique em APLICAR" value={couponInput}
-                            onChange={(e) => handleCouponInputChange(e.target.value)}
-                            className="flex-1 px-4 py-3 border border-extra-medium-gray rounded-lg focus:outline-none focus:ring-2 focus:ring-base-color text-sm" />
+                            onChange={(e) => handleCouponInputChange(e.target.value.toUpperCase())}
+                            className="flex-1 px-4 py-3 border border-extra-medium-gray rounded-lg focus:outline-none focus:ring-2 focus:ring-base-color text-sm uppercase" />
                           <button type="button" onClick={handleApplyCoupon} disabled={couponLoading}
                             className="bg-base-color text-white px-6 py-3 rounded-full text-sm font-medium shadow hover:opacity-90 transition whitespace-nowrap disabled:opacity-60 flex items-center gap-2">
                             {couponLoading && <Loader2 size={14} className="animate-spin" />}
