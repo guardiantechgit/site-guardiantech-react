@@ -14,6 +14,7 @@ type Submission = Tables<"form_submissions"> & {
 };
 
 const getDisplayStatus = (s: Submission) => {
+  if (s.status === "novo") return "novo";
   if (s.status === "recebido" || s.status === "lido") return "recebido";
   if (s.status === "cancelado") return "cancelado";
   if (s.status === "confirmado") return "confirmado";
@@ -23,6 +24,7 @@ const getDisplayStatus = (s: Submission) => {
 };
 
 const displayStatusColors: Record<string, string> = {
+  novo: "bg-blue-100 text-blue-700",
   recebido: "bg-blue-100 text-blue-700",
   confirmado: "bg-amber-100 text-amber-700",
   instalado_pendente: "bg-purple-100 text-purple-700",
@@ -31,6 +33,7 @@ const displayStatusColors: Record<string, string> = {
 };
 
 const displayStatusLabels: Record<string, string> = {
+  novo: "Novo",
   recebido: "Recebido",
   confirmado: "Confirmado — Instalação Pendente",
   instalado_pendente: "Instalado — Pagamento Pendente",
@@ -84,7 +87,7 @@ const AdminSubmissions = () => {
   const handleOpenDetail = async (s: Submission) => {
     setSelected(s);
     // Mark as "lido" on first view
-    if (s.status === "recebido") {
+    if (s.status === "recebido" || s.status === "novo") {
       await supabase.from("form_submissions").update({ status: "lido" }).eq("id", s.id);
       setSelected({ ...s, status: "lido" });
       fetchSubmissions();
