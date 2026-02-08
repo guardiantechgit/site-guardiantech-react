@@ -86,6 +86,14 @@ const Home = () => {
   const [wordIdx, setWordIdx] = useState(0);
   const [ctaIdx, setCtaIdx] = useState(0);
 
+  // Preload all service images so tab switch is instant
+  useEffect(() => {
+    services.forEach((s) => {
+      const img = new Image();
+      img.src = s.image;
+    });
+  }, []);
+
   useEffect(() => {
     const timer = setInterval(() => setCurrentSlide((p) => (p + 1) % slides.length), 5000);
     return () => clearInterval(timer);
