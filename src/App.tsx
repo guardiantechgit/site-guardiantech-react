@@ -17,6 +17,7 @@ import ContrateJuridica from "@/pages/ContrateJuridica";
 import Admin from "@/pages/Admin";
 import NotFound from "@/pages/NotFound";
 import Carregando from "@/pages/Carregando";
+import AppDownload from "@/pages/AppDownload";
 import ScrollToTop from "@/components/ScrollToTop";
 import SiteLoader from "@/components/SiteLoader";
 
@@ -24,7 +25,7 @@ const queryClient = new QueryClient();
 
 const AppRoutes = () => {
   const location = useLocation();
-  const isAdmin = location.pathname.startsWith("/admin");
+  const isAdmin = location.pathname.startsWith("/admin") || location.pathname === "/app";
 
   return (
     <SiteLoader>
@@ -42,6 +43,7 @@ const AppRoutes = () => {
         <Route path="/contrate-fisica" element={<ContrateFisica />} />
         <Route path="/contrate-juridica" element={<ContrateJuridica />} />
         <Route path="/portaria-e-vigilancia" element={<EmConstrucao />} />
+        <Route path="/app" element={<AppDownload />} />
         <Route path="/admin/*" element={<Admin />} />
         <Route path="/carregando" element={<Carregando />} />
         <Route path="*" element={<NotFound />} />
