@@ -12,6 +12,7 @@ import Contato from "@/pages/Contato";
 import Clientes from "@/pages/Clientes";
 import LandingRastreamento from "@/pages/LandingRastreamento";
 import EmConstrucao from "@/pages/EmConstrucao";
+import ContrateFisica from "@/pages/ContrateFisica";
 import NotFound from "@/pages/NotFound";
 import ScrollToTop from "@/components/ScrollToTop";
 
@@ -33,6 +34,7 @@ const App = () => (
           <Route path="/clientes" element={<Clientes />} />
           <Route path="/rastreamento" element={<LandingRastreamento />} />
           <Route path="/controle-de-acesso" element={<EmConstrucao />} />
+          <Route path="/contrate-fisica" element={<ContrateFisica />} />
           <Route path="/portaria-e-vigilancia" element={<EmConstrucao />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
