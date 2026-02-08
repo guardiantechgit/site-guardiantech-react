@@ -170,7 +170,7 @@ const AdminCoupons = () => {
   };
 
   const formatDiscount = (mode: string, value: number) =>
-    mode === "percent" ? `${value}%` : `R$ ${value.toFixed(2)}`;
+    mode === "percent" ? `${value}%` : `R$ ${value.toFixed(2).replace(".", ",")}`;
 
   return (
     <div className="space-y-4">
