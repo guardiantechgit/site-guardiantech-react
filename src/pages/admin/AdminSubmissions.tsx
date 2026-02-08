@@ -5,8 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Eye, Search, Download, CheckCircle, XCircle, Truck, CreditCard } from "lucide-react";
+import { Eye, Search, Download, CheckCircle, XCircle, Truck, CreditCard, FileText } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
+import { generateSubmissionPDF } from "@/lib/submissionPdf";
 
 type Submission = Tables<"form_submissions"> & {
   cancellation_reason?: string | null;
@@ -207,9 +208,14 @@ const AdminSubmissions = () => {
                       ); })()}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <Button variant="ghost" size="sm" onClick={() => handleOpenDetail(s)}>
-                        <Eye size={14} className="mr-1" /> Ver
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => handleOpenDetail(s)}>
+                          <Eye size={14} className="mr-1" /> Ver
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => generateSubmissionPDF(s)} title="Gerar PDF">
+                          <FileText size={14} />
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -239,6 +245,9 @@ const AdminSubmissions = () => {
 
               {/* Action buttons */}
               <div className="flex items-center gap-2 flex-wrap mb-4">
+                <Button size="sm" variant="outline" onClick={() => selected && generateSubmissionPDF(selected)}>
+                  <FileText size={14} className="mr-1" /> Gerar PDF
+                </Button>
                 {canConfirm && (
                   <Button size="sm" onClick={handleConfirm} className="bg-emerald-600 hover:bg-emerald-700 text-white">
                     <CheckCircle size={14} className="mr-1" /> Confirmar
