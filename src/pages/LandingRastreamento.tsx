@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Car, Smartphone, Signal, CheckCircle, User, Briefcase, MessageCircle, ChevronDown } from "lucide-react";
 import AnimatedSection from "@/components/AnimatedSection";
@@ -133,23 +134,23 @@ const LandingRastreamento = () => {
       {/* CTA */}
       <section
         id="contrate-agora"
-        className="relative py-16 bg-cover bg-center"
+        className="relative py-20 bg-cover bg-center bg-fixed"
         style={{ backgroundImage: "url(/images/title-landingr.jpg)" }}
       >
         <div className="absolute inset-0 bg-slate-blue/80" />
         <div className="container mx-auto px-4 relative z-10">
           <div className="flex flex-col xl:flex-row items-center justify-between gap-8">
             <div className="text-center xl:text-left">
-              <h3 className="text-white text-2xl md:text-3xl font-medium mb-2">Contrate agora mesmo!</h3>
+              <h3 className="text-white text-2xl md:text-3xl font-alt font-medium mb-1 -tracking-[1px]">Contrate agora mesmo!</h3>
               <span className="text-white/70 font-light text-lg">Preencha nossa ficha para efetuar seu cadastro.</span>
             </div>
             <div className="flex flex-wrap gap-4 justify-center">
-              <a href="https://form.respondi.app/G7V0ITr4" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 bg-base-color text-dark-gray px-8 py-4 rounded-full font-semibold shadow-lg hover:shadow-xl transition">
+              <Link to="/contrate-fisica" className="inline-flex items-center gap-2 bg-base-color text-dark-gray px-10 py-4 rounded-full font-semibold shadow-lg hover:shadow-xl transition text-base">
                 <User size={18} /> Pessoa Física
-              </a>
-              <a href="https://form.respondi.app/JlRmjih2" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 bg-base-color text-dark-gray px-8 py-4 rounded-full font-semibold shadow-lg hover:shadow-xl transition">
+              </Link>
+              <Link to="/contrate-juridica" className="inline-flex items-center gap-2 bg-base-color text-dark-gray px-10 py-4 rounded-full font-semibold shadow-lg hover:shadow-xl transition text-base">
                 <Briefcase size={18} /> Pessoa Jurídica
-              </a>
+              </Link>
             </div>
           </div>
         </div>
@@ -158,14 +159,14 @@ const LandingRastreamento = () => {
       {/* WhatsApp Contact */}
       <section
         id="contato-whatsapp"
-        className="relative py-20 bg-cover bg-center"
+        className="relative py-24 md:py-32 bg-cover bg-center bg-fixed"
         style={{ backgroundImage: "url(/images/title-landingr.jpg)" }}
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-black/80 to-orange-900/60" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-orange-900/50" />
         <div className="container mx-auto px-4 relative z-10">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
-            <div className="text-center lg:text-left">
-              <h2 className="text-white text-2xl md:text-3xl font-alt font-medium">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-10">
+            <div className="text-center lg:text-left lg:max-w-lg">
+              <h2 className="text-white text-2xl md:text-3xl font-alt font-medium -tracking-[1px]">
                 Entre em contato para saber sobre{" "}
                 <AnimatePresence mode="wait">
                   <motion.span
@@ -186,12 +187,12 @@ const LandingRastreamento = () => {
               rel="noreferrer"
               className="flex items-center gap-5 text-white group"
             >
-              <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-base-color flex items-center justify-center group-hover:scale-105 transition">
-                <MessageCircle size={32} className="text-white" />
+              <div className="w-24 h-24 md:w-28 md:h-28 rounded-full bg-base-color flex items-center justify-center group-hover:scale-105 transition shadow-lg">
+                <MessageCircle size={36} className="text-white" />
               </div>
               <div>
-                <span className="text-xl md:text-2xl font-semibold block">WhatsApp</span>
-                <span className="text-lg opacity-90">(11) 93030-9090</span>
+                <span className="text-2xl md:text-[26px] font-semibold block leading-8">WhatsApp</span>
+                <span className="text-xl md:text-[22px] opacity-90 block">(11) 93030-9090</span>
                 <p className="text-white/70 text-sm mt-1">Clique para iniciar a conversa.</p>
               </div>
             </a>
