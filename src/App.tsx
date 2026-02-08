@@ -16,6 +16,7 @@ import ContrateFisica from "@/pages/ContrateFisica";
 import ContrateJuridica from "@/pages/ContrateJuridica";
 import Admin from "@/pages/Admin";
 import NotFound from "@/pages/NotFound";
+import Carregando from "@/pages/Carregando";
 import ScrollToTop from "@/components/ScrollToTop";
 import SiteLoader from "@/components/SiteLoader";
 
@@ -42,6 +43,7 @@ const AppRoutes = () => {
         <Route path="/contrate-juridica" element={<ContrateJuridica />} />
         <Route path="/portaria-e-vigilancia" element={<EmConstrucao />} />
         <Route path="/admin/*" element={<Admin />} />
+        <Route path="/carregando" element={<Carregando />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       {!isAdmin && <Footer />}
