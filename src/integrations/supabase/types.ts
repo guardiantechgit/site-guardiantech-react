@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      contracts: {
+        Row: {
+          content: string
+          id: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          content?: string
+          id?: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          id?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       coupons: {
         Row: {
           active: boolean
@@ -64,6 +85,7 @@ export type Database = {
           address_street: string | null
           address_uf: string | null
           birth_date: string | null
+          cnpj: string | null
           collected_at: string
           coupon_code: string | null
           coupon_description: string | null
@@ -77,9 +99,15 @@ export type Database = {
           emergency_name: string | null
           emergency_phone: string | null
           emergency_relationship: string | null
+          financial_email: string | null
+          financial_name: string | null
+          financial_phone: string | null
+          form_type: string
           full_name: string
           geolocation: string | null
           id: string
+          ie: string | null
+          ie_isento: boolean | null
           install_address_choice: string | null
           install_cep: string | null
           install_city: string | null
@@ -96,11 +124,13 @@ export type Database = {
           monthly_due_day: string | null
           monthly_payment: string | null
           monthly_value: string | null
+          nome_fantasia: string | null
           notes: string | null
           phone_primary: string
           phone_secondary: string | null
           plan_name: string | null
           platform_username: string | null
+          razao_social: string | null
           remote_blocking: string | null
           rg: string
           status: string
@@ -125,6 +155,7 @@ export type Database = {
           address_street?: string | null
           address_uf?: string | null
           birth_date?: string | null
+          cnpj?: string | null
           collected_at?: string
           coupon_code?: string | null
           coupon_description?: string | null
@@ -138,9 +169,15 @@ export type Database = {
           emergency_name?: string | null
           emergency_phone?: string | null
           emergency_relationship?: string | null
+          financial_email?: string | null
+          financial_name?: string | null
+          financial_phone?: string | null
+          form_type?: string
           full_name: string
           geolocation?: string | null
           id?: string
+          ie?: string | null
+          ie_isento?: boolean | null
           install_address_choice?: string | null
           install_cep?: string | null
           install_city?: string | null
@@ -157,11 +194,13 @@ export type Database = {
           monthly_due_day?: string | null
           monthly_payment?: string | null
           monthly_value?: string | null
+          nome_fantasia?: string | null
           notes?: string | null
           phone_primary: string
           phone_secondary?: string | null
           plan_name?: string | null
           platform_username?: string | null
+          razao_social?: string | null
           remote_blocking?: string | null
           rg: string
           status?: string
@@ -186,6 +225,7 @@ export type Database = {
           address_street?: string | null
           address_uf?: string | null
           birth_date?: string | null
+          cnpj?: string | null
           collected_at?: string
           coupon_code?: string | null
           coupon_description?: string | null
@@ -199,9 +239,15 @@ export type Database = {
           emergency_name?: string | null
           emergency_phone?: string | null
           emergency_relationship?: string | null
+          financial_email?: string | null
+          financial_name?: string | null
+          financial_phone?: string | null
+          form_type?: string
           full_name?: string
           geolocation?: string | null
           id?: string
+          ie?: string | null
+          ie_isento?: boolean | null
           install_address_choice?: string | null
           install_cep?: string | null
           install_city?: string | null
@@ -218,11 +264,13 @@ export type Database = {
           monthly_due_day?: string | null
           monthly_payment?: string | null
           monthly_value?: string | null
+          nome_fantasia?: string | null
           notes?: string | null
           phone_primary?: string
           phone_secondary?: string | null
           plan_name?: string | null
           platform_username?: string | null
+          razao_social?: string | null
           remote_blocking?: string | null
           rg?: string
           status?: string

@@ -2,8 +2,8 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { Send, Loader2 } from "lucide-react";
 import PageTitle from "@/components/PageTitle";
 import AnimatedSection from "@/components/AnimatedSection";
-import { onlyDigits, formatPhoneBR, formatCPF, formatCEP, formatPlate, sanitizeUsername } from "@/lib/masks";
-import { isValidCPF, isValidPhoneBR, isValidPlate, isValidEmail } from "@/lib/validators";
+import { onlyDigits, formatPhoneBR, formatCNPJ, formatCEP, formatPlate, sanitizeUsername } from "@/lib/masks";
+import { isValidCNPJ, isValidPhoneBR, isValidPlate, isValidEmail } from "@/lib/validators";
 import { findCoupon, type Coupon } from "@/lib/coupons";
 import { computeQuote, type QuoteResult } from "@/lib/quoteCalculator";
 import { lookupViaCep } from "@/lib/viaCep";
@@ -13,11 +13,12 @@ import { supabase } from "@/integrations/supabase/client";
 
 // ── Types ──
 interface FormData {
-  fullName: string;
+  razaoSocial: string;
+  nomeFantasia: string;
   email: string;
-  cpf: string;
-  rg: string;
-  birthDate: string;
+  cnpj: string;
+  ie: string;
+  ieIsento: boolean;
   phonePrimary: string;
   phoneSecondary: string;
   platformUsername: string;
@@ -32,6 +33,9 @@ interface FormData {
   emergencyName: string;
   emergencyPhone: string;
   emergencyRelationship: string;
+  financialName: string;
+  financialPhone: string;
+  financialEmail: string;
   vehicleType: string;
   vehicleFuel: string;
   vehicleColor: string;
@@ -56,11 +60,12 @@ interface FormData {
 }
 
 const initialForm: FormData = {
-  fullName: "", email: "", cpf: "", rg: "", birthDate: "",
+  razaoSocial: "", nomeFantasia: "", email: "", cnpj: "", ie: "", ieIsento: false,
   phonePrimary: "", phoneSecondary: "", platformUsername: "",
   addressCep: "", addressUf: "", addressCity: "", addressNeighborhood: "",
   addressStreet: "", addressNumber: "", addressComplement: "", addressNote: "",
   emergencyName: "", emergencyPhone: "", emergencyRelationship: "",
+  financialName: "", financialPhone: "", financialEmail: "",
   vehicleType: "", vehicleFuel: "", vehicleColor: "", vehiclePlate: "",
   vehicleBrand: "", vehicleModel: "", vehicleYear: "", vehicleMaxDays: "",
   remoteBlocking: "",
@@ -97,46 +102,34 @@ function parseUserAgent(ua: string): string {
   let browser = "Navegador desconhecido";
   let browserVersion = "";
   let os = "SO desconhecido";
-
-  // Browser + version
   const edgMatch = ua.match(/Edg\/(\d+[\d.]*)/);
   const ffMatch = ua.match(/Firefox\/(\d+[\d.]*)/);
   const chromeMatch = ua.match(/Chrome\/(\d+[\d.]*)/);
   const safariMatch = ua.match(/Version\/(\d+[\d.]*).*Safari/);
   const operaMatch = ua.match(/OPR\/(\d+[\d.]*)/);
-
   if (operaMatch) { browser = "Opera"; browserVersion = operaMatch[1]; }
   else if (edgMatch) { browser = "Edge"; browserVersion = edgMatch[1]; }
   else if (ffMatch) { browser = "Firefox"; browserVersion = ffMatch[1]; }
   else if (chromeMatch) { browser = "Chrome"; browserVersion = chromeMatch[1]; }
   else if (safariMatch) { browser = "Safari"; browserVersion = safariMatch[1]; }
-
-  // OS + version
   const winMatch = ua.match(/Windows NT (\d+\.\d+)/);
   const macMatch = ua.match(/Mac OS X (\d+[._]\d+[._]?\d*)/);
   const androidMatch = ua.match(/Android (\d+[\d.]*)/);
   const iosMatch = ua.match(/(?:iPhone|iPad) OS (\d+[_]\d+)/);
   const linuxMatch = ua.includes("Linux");
-
   if (winMatch) {
     const ver = winMatch[1];
     const winNames: Record<string, string> = { "10.0": "10/11", "6.3": "8.1", "6.2": "8", "6.1": "7" };
     os = `Windows ${winNames[ver] || ver}`;
-  } else if (macMatch) {
-    os = `macOS ${macMatch[1].replace(/_/g, ".")}`;
-  } else if (androidMatch) {
-    os = `Android ${androidMatch[1]}`;
-  } else if (iosMatch) {
-    os = `iOS ${iosMatch[1].replace(/_/g, ".")}`;
-  } else if (linuxMatch) {
-    os = "Linux";
-  }
-
+  } else if (macMatch) { os = `macOS ${macMatch[1].replace(/_/g, ".")}`; }
+  else if (androidMatch) { os = `Android ${androidMatch[1]}`; }
+  else if (iosMatch) { os = `iOS ${iosMatch[1].replace(/_/g, ".")}`; }
+  else if (linuxMatch) { os = "Linux"; }
   const bv = browserVersion ? ` ${browserVersion.split(".")[0]}` : "";
   return `${browser}${bv} / ${os}`;
 }
 
-// DocSlot component for document upload
+// DocSlot component
 interface DocSlotProps {
   label: string;
   doc: { file: File; previewUrl: string } | null;
@@ -182,7 +175,6 @@ const DocSlot = ({ label, doc, inputRef, onSelect, onRemove, onChange, altText }
     </button>
     {doc ? (
       <div className="mt-3 border border-extra-medium-gray rounded-lg overflow-hidden">
-        {/* File info bar */}
         <div className="flex items-center justify-between gap-2 px-3 py-2 bg-muted">
           <div className="flex items-center gap-2 min-w-0">
             <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-base-color/10 text-base-color">
@@ -198,7 +190,6 @@ const DocSlot = ({ label, doc, inputRef, onSelect, onRemove, onChange, altText }
             Remover
           </button>
         </div>
-        {/* Preview */}
         <div className="bg-muted/30">
           {isPdfFile(doc.file) ? (
             <div className="flex flex-col items-center justify-center py-6 gap-2">
@@ -232,7 +223,6 @@ const DocSlot = ({ label, doc, inputRef, onSelect, onRemove, onChange, altText }
   </div>
 );
 
-// Collected data footer with real IP fetch
 const CollectedDataFooter = () => {
   const [ip, setIp] = useState("Carregando...");
   useEffect(() => {
@@ -265,17 +255,17 @@ const CollectedDataFooter = () => {
   );
 };
 
-const ContrateFisica = () => {
+const ContrateJuridica = () => {
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState<FormData>(initialForm);
   const [alertMsg, setAlertMsg] = useState<{ type: "danger" | "warning" | "success" | "info"; text: string } | null>(null);
   const [invalidFields, setInvalidFields] = useState<Set<string>>(new Set());
   const [contractText, setContractText] = useState("");
 
-  // Load contract text from DB
+  // Load contract text
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("contracts").select("content").eq("type", "pf").maybeSingle();
+      const { data } = await supabase.from("contracts").select("content").eq("type", "pj").maybeSingle();
       if (data) setContractText(data.content);
     })();
   }, []);
@@ -295,20 +285,20 @@ const ContrateFisica = () => {
   const [contractScrolled, setContractScrolled] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
-  // Document upload
+  // Document upload (only 1 doc for PJ)
   const docUpload = useDocumentUpload();
   const { getToken } = useRecaptcha();
 
   // Quote
   const quote: QuoteResult = computeQuote(form.vehicleType, form.remoteBlocking, couponApplied);
 
-  // Alert ref for scrolling
   const alertRef = useRef<HTMLDivElement>(null);
 
-  // ── Helpers ──
-  const setField = (name: keyof FormData, value: string) => {
+  const setField = (name: keyof FormData, value: string | boolean) => {
     setForm((prev) => ({ ...prev, [name]: value }));
-    setInvalidFields((prev) => { const n = new Set(prev); n.delete(name); return n; });
+    if (typeof value === "string") {
+      setInvalidFields((prev) => { const n = new Set(prev); n.delete(name); return n; });
+    }
   };
 
   const markInvalid = (field: string) => {
@@ -326,65 +316,33 @@ const ContrateFisica = () => {
   const selectCls = (field: string) =>
     `w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-base-color text-sm bg-white ${invalidFields.has(field) ? "border-red-500" : "border-extra-medium-gray"}`;
 
-  // ── ViaCEP ──
+  // ViaCEP
   const handleCepBlur = async (scope: "address" | "install") => {
     const cepField = scope === "address" ? "addressCep" : "installCep";
-    const cep8 = onlyDigits(form[cepField]).slice(0, 8);
+    const cep8 = onlyDigits(form[cepField] as string).slice(0, 8);
     if (cep8.length !== 8) return;
     if (scope === "install" && form.installAddressChoice === "same") return;
-
     const data = await lookupViaCep(cep8);
     if (!data) return;
-
     if (scope === "address") {
-      setForm((prev) => ({
-        ...prev,
-        addressUf: data.uf || prev.addressUf,
-        addressCity: data.localidade || prev.addressCity,
-        addressNeighborhood: data.bairro || prev.addressNeighborhood,
-        addressStreet: data.logradouro || prev.addressStreet,
-      }));
+      setForm((prev) => ({ ...prev, addressUf: data.uf || prev.addressUf, addressCity: data.localidade || prev.addressCity, addressNeighborhood: data.bairro || prev.addressNeighborhood, addressStreet: data.logradouro || prev.addressStreet }));
     } else {
-      setForm((prev) => ({
-        ...prev,
-        installUf: data.uf || prev.installUf,
-        installCity: data.localidade || prev.installCity,
-        installNeighborhood: data.bairro || prev.installNeighborhood,
-        installStreet: data.logradouro || prev.installStreet,
-      }));
+      setForm((prev) => ({ ...prev, installUf: data.uf || prev.installUf, installCity: data.localidade || prev.installCity, installNeighborhood: data.bairro || prev.installNeighborhood, installStreet: data.logradouro || prev.installStreet }));
     }
   };
 
-  // ── Copy address when "same" ──
   useEffect(() => {
     if (form.installAddressChoice === "same") {
-      setForm((prev) => ({
-        ...prev,
-        installCep: prev.addressCep,
-        installUf: prev.addressUf,
-        installCity: prev.addressCity,
-        installNeighborhood: prev.addressNeighborhood,
-        installStreet: prev.addressStreet,
-        installNumber: prev.addressNumber,
-        installComplement: prev.addressComplement,
-        installNote: prev.addressNote,
-      }));
+      setForm((prev) => ({ ...prev, installCep: prev.addressCep, installUf: prev.addressUf, installCity: prev.addressCity, installNeighborhood: prev.addressNeighborhood, installStreet: prev.addressStreet, installNumber: prev.addressNumber, installComplement: prev.addressComplement, installNote: prev.addressNote }));
     }
-  }, [
-    form.installAddressChoice,
-    form.addressCep, form.addressUf, form.addressCity, form.addressNeighborhood,
-    form.addressStreet, form.addressNumber, form.addressComplement, form.addressNote,
-  ]);
+  }, [form.installAddressChoice, form.addressCep, form.addressUf, form.addressCity, form.addressNeighborhood, form.addressStreet, form.addressNumber, form.addressComplement, form.addressNote]);
 
-  // ── Contract scroll detection ──
   const handleContractScroll = useCallback(() => {
     const el = contractRef.current;
     if (!el) return;
-    const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 8;
-    if (atBottom) setContractScrolled(true);
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 8) setContractScrolled(true);
   }, []);
 
-  // ── Period toggle ──
   const togglePeriod = (key: "manha" | "tarde" | "noite") => {
     setPeriods((prev) => ({ ...prev, [key]: !prev[key] }));
   };
@@ -393,64 +351,45 @@ const ContrateFisica = () => {
     setPeriods({ manha: newState, tarde: newState, noite: newState });
   };
 
-  // ── Coupon ──
   const handleApplyCoupon = async () => {
     setCouponAlert(null);
     const raw = couponInput.trim();
-    if (!raw) {
-      setCouponAlert({ type: "warning", text: "Digite um cupom para aplicar." });
-      return;
-    }
+    if (!raw) { setCouponAlert({ type: "warning", text: "Digite um cupom para aplicar." }); return; }
     const found = await findCoupon(raw);
-    if (found) {
-      setCouponApplied(found);
-      setCouponAlert({ type: "success", text: `Cupom ${found.code} válido.` });
-    } else {
-      setCouponApplied(null);
-      setCouponAlert({ type: "danger", text: `Cupom ${raw.toUpperCase()} inválido.` });
-    }
+    if (found) { setCouponApplied(found); setCouponAlert({ type: "success", text: `Cupom ${found.code} válido.` }); }
+    else { setCouponApplied(null); setCouponAlert({ type: "danger", text: `Cupom ${raw.toUpperCase()} inválido.` }); }
   };
 
   const handleCouponInputChange = (val: string) => {
     setCouponInput(val);
-    if (couponApplied && val.trim().toUpperCase() !== couponApplied.code) {
-      setCouponApplied(null);
-      setCouponAlert(null);
-    }
+    if (couponApplied && val.trim().toUpperCase() !== couponApplied.code) { setCouponApplied(null); setCouponAlert(null); }
   };
 
-  // ── Validation ──
+  // Validation
   const validateAll = (): boolean => {
     setAlertMsg(null);
     setInvalidFields(new Set());
+    const fail = (field: string, msg: string) => { markInvalid(field); showAlert("danger", msg); return false; };
 
-    const fail = (field: string, msg: string) => {
-      markInvalid(field);
-      showAlert("danger", msg);
-      return false;
-    };
-
-    // Personal data
-    if (!form.fullName.trim()) return fail("fullName", "Preencha seu nome completo.");
-    if (!form.email.trim()) return fail("email", "Preencha seu e-mail principal.");
+    if (!form.razaoSocial.trim()) return fail("razaoSocial", "Preencha a razão social.");
+    if (!form.nomeFantasia.trim()) return fail("nomeFantasia", "Preencha o nome fantasia.");
+    if (!form.email.trim()) return fail("email", "Preencha o e-mail principal.");
     if (!isValidEmail(form.email)) return fail("email", "Digite um e-mail válido.");
-    if (!onlyDigits(form.cpf)) return fail("cpf", "Preencha seu CPF.");
-    if (!isValidCPF(form.cpf)) return fail("cpf", "CPF inválido. Verifique e tente novamente.");
-    if (!form.rg.trim()) return fail("rg", "Preencha seu RG.");
-    if (!form.birthDate) return fail("birthDate", "Informe sua data de nascimento.");
-    if (!form.phonePrimary.trim()) return fail("phonePrimary", "Preencha seu celular principal.");
+    if (!onlyDigits(form.cnpj)) return fail("cnpj", "Preencha o CNPJ.");
+    if (!isValidCNPJ(form.cnpj)) return fail("cnpj", "CNPJ inválido. Verifique e tente novamente.");
+    if (!form.ieIsento && !form.ie.trim()) return fail("ie", "Preencha a Inscrição Estadual ou marque Isento.");
+    if (!form.phonePrimary.trim()) return fail("phonePrimary", "Preencha o celular principal.");
     if (!isValidPhoneBR(form.phonePrimary)) return fail("phonePrimary", "Celular principal inválido.");
-    if (!form.phoneSecondary.trim()) return fail("phoneSecondary", "Preencha seu telefone secundário.");
+    if (!form.phoneSecondary.trim()) return fail("phoneSecondary", "Preencha o telefone secundário.");
     if (!isValidPhoneBR(form.phoneSecondary)) return fail("phoneSecondary", "Telefone secundário inválido.");
     if (!form.platformUsername.trim()) return fail("platformUsername", "Digite o nome de usuário desejado.");
     if (sanitizeUsername(form.platformUsername).length === 0) return fail("platformUsername", "Nome de usuário inválido.");
 
-    // Document upload
-    const docErr = docUpload.validate();
-    if (docErr) { showAlert("danger", docErr); return false; }
+    // Document
+    if (!docUpload.doc1) { showAlert("danger", "Anexe o Contrato Social."); return false; }
 
     // Address
-    if (!onlyDigits(form.addressCep)) return fail("addressCep", "Preencha o CEP do endereço de cadastro.");
+    if (!onlyDigits(form.addressCep)) return fail("addressCep", "Preencha o CEP.");
     if (!form.addressUf.trim()) return fail("addressUf", "Preencha a UF.");
     if (!form.addressCity.trim()) return fail("addressCity", "Preencha a cidade.");
     if (!form.addressNeighborhood.trim()) return fail("addressNeighborhood", "Preencha o bairro.");
@@ -463,42 +402,42 @@ const ContrateFisica = () => {
     if (!isValidPhoneBR(form.emergencyPhone)) return fail("emergencyPhone", "Telefone do contato de emergência inválido.");
     if (!form.emergencyRelationship.trim()) return fail("emergencyRelationship", "Preencha a relação/parentesco.");
 
+    // Financial
+    if (!form.financialName.trim()) return fail("financialName", "Preencha o nome do contato financeiro.");
+    if (!form.financialPhone.trim()) return fail("financialPhone", "Preencha o telefone do contato financeiro.");
+    if (!isValidPhoneBR(form.financialPhone)) return fail("financialPhone", "Telefone do contato financeiro inválido.");
+    if (!form.financialEmail.trim()) return fail("financialEmail", "Preencha o e-mail do contato financeiro.");
+    if (!isValidEmail(form.financialEmail)) return fail("financialEmail", "E-mail do contato financeiro inválido.");
+
     // Vehicle
     if (!form.vehicleType) return fail("vehicleType", "Selecione o tipo de veículo.");
-    if (!form.vehicleFuel) return fail("vehicleFuel", "Selecione o combustível do veículo.");
-    if (!form.vehicleColor) return fail("vehicleColor", "Selecione a cor do veículo.");
-    if (!form.vehiclePlate.trim()) return fail("vehiclePlate", "Preencha a placa do veículo.");
+    if (!form.vehicleFuel) return fail("vehicleFuel", "Selecione o combustível.");
+    if (!form.vehicleColor) return fail("vehicleColor", "Selecione a cor.");
+    if (!form.vehiclePlate.trim()) return fail("vehiclePlate", "Preencha a placa.");
     if (!isValidPlate(form.vehiclePlate)) return fail("vehiclePlate", "Placa inválida. Use ABC-1234 ou ABC-1D23.");
-    if (!form.vehicleBrand.trim()) return fail("vehicleBrand", "Preencha a marca do veículo.");
-    if (!form.vehicleModel.trim()) return fail("vehicleModel", "Preencha o modelo do veículo.");
+    if (!form.vehicleBrand.trim()) return fail("vehicleBrand", "Preencha a marca.");
+    if (!form.vehicleModel.trim()) return fail("vehicleModel", "Preencha o modelo.");
     if (!form.vehicleYear.trim()) return fail("vehicleYear", "Preencha o ano modelo.");
     if (!form.vehicleMaxDays) return fail("vehicleMaxDays", "Selecione o tempo máximo sem uso.");
     if (!form.remoteBlocking) return fail("remoteBlocking", "Selecione se deseja bloqueio remoto.");
 
-    // Install address (only if "other")
+    // Install address
     if (form.installAddressChoice === "other") {
-      if (!onlyDigits(form.installCep)) return fail("installCep", "Preencha o CEP do endereço de instalação.");
+      if (!onlyDigits(form.installCep)) return fail("installCep", "Preencha o CEP da instalação.");
       if (!form.installUf.trim()) return fail("installUf", "Preencha a UF da instalação.");
       if (!form.installCity.trim()) return fail("installCity", "Preencha a cidade da instalação.");
       if (!form.installNeighborhood.trim()) return fail("installNeighborhood", "Preencha o bairro da instalação.");
-      if (!form.installStreet.trim()) return fail("installStreet", "Preencha a rua/avenida da instalação.");
+      if (!form.installStreet.trim()) return fail("installStreet", "Preencha a rua da instalação.");
       if (!form.installNumber.trim()) return fail("installNumber", "Preencha o número da instalação.");
     }
 
     // Payment
-    if (!periods.manha && !periods.tarde && !periods.noite) {
-      showAlert("danger", "Escolha o melhor período para instalação.");
-      return false;
-    }
+    if (!periods.manha && !periods.tarde && !periods.noite) { showAlert("danger", "Escolha o melhor período para instalação."); return false; }
     if (!form.installationPayment) return fail("installationPayment", "Selecione a forma de pagamento da instalação.");
     if (!form.monthlyPayment) return fail("monthlyPayment", "Selecione a forma de pagamento da mensalidade.");
     if (!form.monthlyDueDay) return fail("monthlyDueDay", "Selecione o dia de vencimento.");
 
-    // Terms
-    if (!termsAccepted) {
-      showAlert("danger", "Você deve aceitar o contrato e os termos de uso para continuar.");
-      return false;
-    }
+    if (!termsAccepted) { showAlert("danger", "Você deve aceitar o contrato e os termos de uso."); return false; }
 
     return true;
   };
@@ -509,94 +448,57 @@ const ContrateFisica = () => {
     setSubmitting(true);
 
     try {
-      // Get reCAPTCHA token
       let recaptchaToken = "";
-      try {
-        recaptchaToken = await getToken("hire_form");
-      } catch {
-        showAlert("danger", "Erro na verificação CAPTCHA. Recarregue a página e tente novamente.");
-        setSubmitting(false);
-        return;
-      }
+      try { recaptchaToken = await getToken("hire_form_pj"); }
+      catch { showAlert("danger", "Erro na verificação CAPTCHA. Recarregue a página."); setSubmitting(false); return; }
 
-      // Collect metadata
       let ipAddress = "";
-      try {
-        const ipRes = await fetch("https://api64.ipify.org?format=json");
-        const ipData = await ipRes.json();
-        ipAddress = ipData.ip || "";
-      } catch {
-        try {
-          const ipRes2 = await fetch("https://ipinfo.io/json");
-          const ipData2 = await ipRes2.json();
-          ipAddress = ipData2.ip || "";
-        } catch { /* ignore */ }
-      }
+      try { const r = await fetch("https://api64.ipify.org?format=json"); const d = await r.json(); ipAddress = d.ip || ""; }
+      catch { try { const r2 = await fetch("https://ipinfo.io/json"); const d2 = await r2.json(); ipAddress = d2.ip || ""; } catch {} }
 
       const userAgent = navigator.userAgent;
-      const uaFriendly = parseUserAgent(navigator.userAgent);
+      const uaFriendly = parseUserAgent(userAgent);
 
       let geolocation = "";
-      try {
-        const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
-          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 })
-        );
-        geolocation = `${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`;
-      } catch { /* user denied or timeout */ }
+      try { const pos = await new Promise<GeolocationPosition>((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 })); geolocation = `${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`; } catch {}
 
       const collectedAt = new Date().toISOString();
 
-      // Upload documents to storage
       let doc1Url = "";
       let doc1Name = "";
-      let doc2Url = "";
-      let doc2Name = "";
-
-      const uploadDoc = async (file: File, slot: number) => {
-        const ext = file.name.split(".").pop() || "jpg";
-        const path = `${crypto.randomUUID()}.${ext}`;
-        const { data, error } = await supabase.storage.from("documents").upload(path, file);
-        if (error) throw new Error(`Erro ao enviar documento: ${error.message}`);
-        // Store the storage path (not public URL) since bucket is private
-        return { url: `documents/${path}`, name: file.name };
-      };
-
       if (docUpload.doc1) {
-        const r = await uploadDoc(docUpload.doc1.file, 1);
-        doc1Url = r.url;
-        doc1Name = r.name;
-      }
-      if (docUpload.doc2) {
-        const r = await uploadDoc(docUpload.doc2.file, 2);
-        doc2Url = r.url;
-        doc2Name = r.name;
+        const ext = docUpload.doc1.file.name.split(".").pop() || "jpg";
+        const path = `${crypto.randomUUID()}.${ext}`;
+        const { error } = await supabase.storage.from("documents").upload(path, docUpload.doc1.file);
+        if (error) throw new Error(`Erro ao enviar documento: ${error.message}`);
+        doc1Url = `documents/${path}`;
+        doc1Name = docUpload.doc1.file.name;
       }
 
-      // Build periods string
       const periodsArr = [];
       if (periods.manha) periodsArr.push("Manhã");
       if (periods.tarde) periodsArr.push("Tarde");
       if (periods.noite) periodsArr.push("Noite");
 
-      // Coupon description
       let couponDesc = "";
       if (couponApplied) {
         const parts = [];
-        if (couponApplied.install_discount_enabled) {
-          parts.push(`Instalação: ${couponApplied.install_discount_mode === "percent" ? couponApplied.install_discount_value + "%" : "R$ " + couponApplied.install_discount_value.toFixed(2)} de desconto`);
-        }
-        if (couponApplied.monthly_discount_enabled) {
-          parts.push(`Mensalidade: ${couponApplied.monthly_discount_mode === "percent" ? couponApplied.monthly_discount_value + "%" : "R$ " + couponApplied.monthly_discount_value.toFixed(2)} de desconto`);
-        }
+        if (couponApplied.install_discount_enabled) parts.push(`Instalação: ${couponApplied.install_discount_mode === "percent" ? couponApplied.install_discount_value + "%" : "R$ " + couponApplied.install_discount_value.toFixed(2)} de desconto`);
+        if (couponApplied.monthly_discount_enabled) parts.push(`Mensalidade: ${couponApplied.monthly_discount_mode === "percent" ? couponApplied.monthly_discount_value + "%" : "R$ " + couponApplied.monthly_discount_value.toFixed(2)} de desconto`);
         couponDesc = parts.join("; ");
       }
 
       const submission = {
-        full_name: form.fullName.trim(),
+        form_type: "pj",
+        full_name: form.razaoSocial.trim(),
+        razao_social: form.razaoSocial.trim(),
+        nome_fantasia: form.nomeFantasia.trim(),
         email: form.email.trim(),
-        cpf: form.cpf,
-        rg: form.rg.trim(),
-        birth_date: form.birthDate,
+        cpf: "", // not applicable for PJ
+        cnpj: form.cnpj,
+        ie: form.ieIsento ? "ISENTO" : form.ie.trim(),
+        ie_isento: form.ieIsento,
+        rg: "", // not applicable for PJ
         phone_primary: form.phonePrimary,
         phone_secondary: form.phoneSecondary,
         platform_username: sanitizeUsername(form.platformUsername),
@@ -611,6 +513,9 @@ const ContrateFisica = () => {
         emergency_name: form.emergencyName.trim(),
         emergency_phone: form.emergencyPhone,
         emergency_relationship: form.emergencyRelationship.trim(),
+        financial_name: form.financialName.trim(),
+        financial_phone: form.financialPhone,
+        financial_email: form.financialEmail.trim(),
         vehicle_type: form.vehicleType,
         vehicle_fuel: form.vehicleFuel,
         vehicle_color: form.vehicleColor,
@@ -640,8 +545,6 @@ const ContrateFisica = () => {
         coupon_description: couponDesc || null,
         doc1_url: doc1Url || null,
         doc1_name: doc1Name || null,
-        doc2_url: doc2Url || null,
-        doc2_name: doc2Name || null,
         ip_address: ipAddress,
         user_agent: userAgent,
         user_agent_friendly: uaFriendly,
@@ -650,18 +553,11 @@ const ContrateFisica = () => {
         status: "novo",
       };
 
-      // Save to database
       const { error: dbError } = await supabase.from("form_submissions").insert(submission);
       if (dbError) throw new Error(`Erro ao salvar: ${dbError.message}`);
 
-      // Send email via edge function
-      try {
-        await supabase.functions.invoke("send-form-email", {
-          body: { submission, recaptchaToken },
-        });
-      } catch (emailErr) {
-        console.error("Email sending failed (form was saved):", emailErr);
-      }
+      try { await supabase.functions.invoke("send-form-email", { body: { submission, recaptchaToken } }); }
+      catch (emailErr) { console.error("Email sending failed (form was saved):", emailErr); }
 
       showAlert("success", "Formulário enviado com sucesso! Em breve entraremos em contato.");
     } catch (err: any) {
@@ -672,7 +568,7 @@ const ContrateFisica = () => {
     }
   };
 
-  // ── Render helpers ──
+  // Render helpers
   const SectionTitle = ({ children }: { children: React.ReactNode }) => (
     <div className="col-span-full mb-1">
       <h6 className="font-alt text-dark-gray font-bold text-lg">{children}</h6>
@@ -706,14 +602,13 @@ const ContrateFisica = () => {
               <div className="flex items-center justify-between mb-10">
                 <div>
                   <h4 className="font-alt text-dark-gray font-bold text-xl md:text-2xl mb-1">
-                    Formulário de contratação<br />(Pessoa física)
+                    Formulário de contratação<br />(Pessoa jurídica)
                   </h4>
                   <p className="text-sm text-medium-gray">Preencha os dados abaixo para iniciarmos seu cadastro e agendamento de instalação.</p>
                 </div>
                 <Send className="text-base-color opacity-75 hidden lg:block" size={48} />
               </div>
 
-              {/* Alert */}
               <div ref={alertRef}>
                 {alertMsg && (
                   <div className={`mb-6 p-4 rounded-lg text-sm ${
@@ -733,14 +628,20 @@ const ContrateFisica = () => {
               <form onSubmit={handleSubmit} noValidate>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
 
-                  {/* ═══ DADOS PESSOAIS ═══ */}
-                  <SectionTitle>Dados pessoais</SectionTitle>
+                  {/* ═══ DADOS DA EMPRESA ═══ */}
+                  <SectionTitle>Dados da empresa</SectionTitle>
 
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Nome completo*</label>
-                    <input type="text" placeholder="Nome completo" value={form.fullName}
-                      onChange={(e) => setField("fullName", e.target.value)}
-                      className={inputCls("fullName")} />
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium mb-2">Razão social*</label>
+                    <input type="text" placeholder="Razão social" value={form.razaoSocial}
+                      onChange={(e) => setField("razaoSocial", e.target.value)}
+                      className={inputCls("razaoSocial")} />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium mb-2">Nome fantasia*</label>
+                    <input type="text" placeholder="Nome fantasia" value={form.nomeFantasia}
+                      onChange={(e) => setField("nomeFantasia", e.target.value)}
+                      className={inputCls("nomeFantasia")} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">E-mail principal*</label>
@@ -749,24 +650,25 @@ const ContrateFisica = () => {
                       className={inputCls("email")} />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">CPF*</label>
-                    <input type="text" placeholder="000.000.000-00" inputMode="numeric" maxLength={14}
-                      value={form.cpf}
-                      onChange={(e) => setField("cpf", formatCPF(onlyDigits(e.target.value)))}
-                      className={inputCls("cpf")} />
+                    <label className="block text-sm font-medium mb-2">CNPJ*</label>
+                    <input type="text" placeholder="00.000.000/0000-00" inputMode="numeric" maxLength={18}
+                      value={form.cnpj}
+                      onChange={(e) => setField("cnpj", formatCNPJ(onlyDigits(e.target.value)))}
+                      className={inputCls("cnpj")} />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">RG*</label>
-                    <input type="text" placeholder="00.000.000-0" inputMode="numeric" maxLength={12}
-                      value={form.rg}
-                      onChange={(e) => setField("rg", e.target.value)}
-                      className={inputCls("rg")} />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Data de nascimento*</label>
-                    <input type="date" value={form.birthDate}
-                      onChange={(e) => setField("birthDate", e.target.value)}
-                      className={inputCls("birthDate")} />
+                    <label className="block text-sm font-medium mb-2">Inscrição Estadual{form.ieIsento ? "" : "*"}</label>
+                    <input type="text" placeholder={form.ieIsento ? "Isento" : "Inscrição Estadual"} inputMode="numeric"
+                      value={form.ieIsento ? "" : form.ie}
+                      onChange={(e) => setField("ie", e.target.value)}
+                      disabled={form.ieIsento}
+                      className={inputCls("ie", form.ieIsento ? "bg-muted opacity-60" : "")} />
+                    <label className="flex items-center gap-2 mt-2 cursor-pointer select-none">
+                      <input type="checkbox" checked={form.ieIsento}
+                        onChange={(e) => setField("ieIsento", e.target.checked)}
+                        className="accent-base-color w-4 h-4" />
+                      <span className="text-xs text-medium-gray">Isento de Inscrição Estadual</span>
+                    </label>
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Celular principal*</label>
@@ -784,7 +686,7 @@ const ContrateFisica = () => {
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium mb-2">Nome de usuário na plataforma*</label>
-                    <input type="text" placeholder="Ex.: joaosilva" maxLength={30}
+                    <input type="text" placeholder="Ex.: empresasilva" maxLength={30}
                       value={form.platformUsername}
                       onChange={(e) => setField("platformUsername", sanitizeUsername(e.target.value))}
                       className={inputCls("platformUsername", "lowercase")} />
@@ -793,40 +695,26 @@ const ContrateFisica = () => {
 
                   {/* ═══ DOCUMENTO ═══ */}
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium mb-2">Anexe seu documento (RG, CPF ou CNH)*</label>
+                    <label className="block text-sm font-medium mb-2">Anexe o Contrato Social*</label>
                     <div className="border border-extra-medium-gray rounded-lg p-5">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Frente */}
-                        <DocSlot
-                          label="Selecionar frente (ou arquivo único)"
-                          doc={docUpload.doc1}
-                          inputRef={docUpload.inputRef1}
-                          onSelect={() => docUpload.inputRef1.current?.click()}
-                          onRemove={docUpload.removeFile(1)}
-                          onChange={docUpload.handleFileSelect(1)}
-                          altText="Prévia do documento"
-                        />
-                        {/* Verso */}
-                        <DocSlot
-                          label="Selecionar verso (opcional)"
-                          doc={docUpload.doc2}
-                          inputRef={docUpload.inputRef2}
-                          onSelect={() => docUpload.inputRef2.current?.click()}
-                          onRemove={docUpload.removeFile(2)}
-                          onChange={docUpload.handleFileSelect(2)}
-                          altText="Prévia do verso"
-                        />
-                      </div>
+                      <DocSlot
+                        label="Selecionar Contrato Social"
+                        doc={docUpload.doc1}
+                        inputRef={docUpload.inputRef1}
+                        onSelect={() => docUpload.inputRef1.current?.click()}
+                        onRemove={docUpload.removeFile(1)}
+                        onChange={docUpload.handleFileSelect(1)}
+                        altText="Prévia do contrato social"
+                      />
                       <small className="block mt-3 text-medium-gray">
-                        Envie a frente e o verso em <strong>um único arquivo</strong> ou em <strong>2 arquivos</strong>.<br />
-                        Formatos: JPG, PNG, WEBP, GIF, HEIC/HEIF ou PDF. Máx: 8 MB por arquivo, 16 MB no total.
+                        Formatos: JPG, PNG, WEBP, GIF, HEIC/HEIF ou PDF. Máx: 8 MB.
                       </small>
                     </div>
                   </div>
 
                   <Divider />
 
-                  {/* ═══ ENDEREÇO DE CADASTRO ═══ */}
+                  {/* ═══ ENDEREÇO ═══ */}
                   <SectionTitle>Endereço de cadastro</SectionTitle>
 
                   <div>
@@ -839,50 +727,36 @@ const ContrateFisica = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">UF*</label>
-                    <input type="text" placeholder="Digite o CEP" readOnly
-                      value={form.addressUf}
-                      className={inputCls("addressUf", "bg-muted")} />
+                    <input type="text" placeholder="Digite o CEP" readOnly value={form.addressUf} className={inputCls("addressUf", "bg-muted")} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Cidade*</label>
-                    <input type="text" placeholder="Digite o CEP" readOnly
-                      value={form.addressCity}
-                      className={inputCls("addressCity", "bg-muted")} />
+                    <input type="text" placeholder="Digite o CEP" readOnly value={form.addressCity} className={inputCls("addressCity", "bg-muted")} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Bairro*</label>
-                    <input type="text" placeholder="Bairro"
-                      value={form.addressNeighborhood}
-                      onChange={(e) => setField("addressNeighborhood", e.target.value)}
-                      className={inputCls("addressNeighborhood")} />
+                    <input type="text" placeholder="Bairro" value={form.addressNeighborhood}
+                      onChange={(e) => setField("addressNeighborhood", e.target.value)} className={inputCls("addressNeighborhood")} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Rua/Avenida*</label>
-                    <input type="text" placeholder="Rua/Avenida"
-                      value={form.addressStreet}
-                      onChange={(e) => setField("addressStreet", e.target.value)}
-                      className={inputCls("addressStreet")} />
+                    <input type="text" placeholder="Rua/Avenida" value={form.addressStreet}
+                      onChange={(e) => setField("addressStreet", e.target.value)} className={inputCls("addressStreet")} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Número*</label>
-                    <input type="text" placeholder="Número" inputMode="numeric"
-                      value={form.addressNumber}
-                      onChange={(e) => setField("addressNumber", e.target.value)}
-                      className={inputCls("addressNumber")} />
+                    <input type="text" placeholder="Número" inputMode="numeric" value={form.addressNumber}
+                      onChange={(e) => setField("addressNumber", e.target.value)} className={inputCls("addressNumber")} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Complemento</label>
-                    <input type="text" placeholder="Complemento"
-                      value={form.addressComplement}
-                      onChange={(e) => setField("addressComplement", e.target.value)}
-                      className={inputCls("addressComplement")} />
+                    <input type="text" placeholder="Complemento" value={form.addressComplement}
+                      onChange={(e) => setField("addressComplement", e.target.value)} className={inputCls("addressComplement")} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Observação</label>
-                    <input type="text" placeholder="Observação"
-                      value={form.addressNote}
-                      onChange={(e) => setField("addressNote", e.target.value)}
-                      className={inputCls("addressNote")} />
+                    <input type="text" placeholder="Observação" value={form.addressNote}
+                      onChange={(e) => setField("addressNote", e.target.value)} className={inputCls("addressNote")} />
                   </div>
 
                   {/* ═══ CONTATO DE EMERGÊNCIA ═══ */}
@@ -896,24 +770,43 @@ const ContrateFisica = () => {
 
                   <div>
                     <label className="block text-sm font-medium mb-2">Nome completo*</label>
-                    <input type="text" placeholder="Nome completo"
-                      value={form.emergencyName}
-                      onChange={(e) => setField("emergencyName", e.target.value)}
-                      className={inputCls("emergencyName")} />
+                    <input type="text" placeholder="Nome completo" value={form.emergencyName}
+                      onChange={(e) => setField("emergencyName", e.target.value)} className={inputCls("emergencyName")} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Telefone*</label>
-                    <input type="tel" placeholder="(11) 90000-0000" maxLength={15}
-                      value={form.emergencyPhone}
-                      onChange={(e) => setField("emergencyPhone", formatPhoneBR(onlyDigits(e.target.value)))}
-                      className={inputCls("emergencyPhone")} />
+                    <input type="tel" placeholder="(11) 90000-0000" maxLength={15} value={form.emergencyPhone}
+                      onChange={(e) => setField("emergencyPhone", formatPhoneBR(onlyDigits(e.target.value)))} className={inputCls("emergencyPhone")} />
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium mb-2">Relação/parentesco*</label>
-                    <input type="text" placeholder="Ex.: Pai, Mãe, Cônjuge..."
-                      value={form.emergencyRelationship}
-                      onChange={(e) => setField("emergencyRelationship", e.target.value)}
-                      className={inputCls("emergencyRelationship")} />
+                    <input type="text" placeholder="Ex.: Sócio, Gerente, Cônjuge..." value={form.emergencyRelationship}
+                      onChange={(e) => setField("emergencyRelationship", e.target.value)} className={inputCls("emergencyRelationship")} />
+                  </div>
+
+                  {/* ═══ CONTATO DO FINANCEIRO ═══ */}
+                  <Divider />
+                  <SectionTitle>Contato do financeiro</SectionTitle>
+                  <div className="md:col-span-2 -mt-3 mb-2">
+                    <p className="text-xs text-medium-gray leading-relaxed">
+                      Pessoa responsável por receber e efetuar as cobranças.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Nome completo*</label>
+                    <input type="text" placeholder="Nome completo" value={form.financialName}
+                      onChange={(e) => setField("financialName", e.target.value)} className={inputCls("financialName")} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Telefone*</label>
+                    <input type="tel" placeholder="(11) 90000-0000" maxLength={15} value={form.financialPhone}
+                      onChange={(e) => setField("financialPhone", formatPhoneBR(onlyDigits(e.target.value)))} className={inputCls("financialPhone")} />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium mb-2">E-mail*</label>
+                    <input type="email" placeholder="financeiro@empresa.com" value={form.financialEmail}
+                      onChange={(e) => setField("financialEmail", e.target.value)} className={inputCls("financialEmail")} />
                   </div>
 
                   {/* ═══ DADOS DO VEÍCULO ═══ */}
@@ -922,64 +815,48 @@ const ContrateFisica = () => {
 
                   <div>
                     <label className="block text-sm font-medium mb-2">Tipo de veículo*</label>
-                    <select value={form.vehicleType}
-                      onChange={(e) => setField("vehicleType", e.target.value)}
-                      className={selectCls("vehicleType")}>
+                    <select value={form.vehicleType} onChange={(e) => setField("vehicleType", e.target.value)} className={selectCls("vehicleType")}>
                       <option value="" disabled>Selecione</option>
                       {VEHICLE_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                     </select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Combustível*</label>
-                    <select value={form.vehicleFuel}
-                      onChange={(e) => setField("vehicleFuel", e.target.value)}
-                      className={selectCls("vehicleFuel")}>
+                    <select value={form.vehicleFuel} onChange={(e) => setField("vehicleFuel", e.target.value)} className={selectCls("vehicleFuel")}>
                       <option value="" disabled>Selecione</option>
                       {FUEL_OPTIONS.map((f) => <option key={f} value={f}>{f}</option>)}
                     </select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Cor*</label>
-                    <select value={form.vehicleColor}
-                      onChange={(e) => setField("vehicleColor", e.target.value)}
-                      className={selectCls("vehicleColor")}>
+                    <select value={form.vehicleColor} onChange={(e) => setField("vehicleColor", e.target.value)} className={selectCls("vehicleColor")}>
                       <option value="" disabled>Selecione</option>
                       {COLOR_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Placa* (com hífen)</label>
-                    <input type="text" placeholder="ABC-1234 / ABC-1D23" maxLength={8}
-                      value={form.vehiclePlate}
-                      onChange={(e) => setField("vehiclePlate", formatPlate(e.target.value))}
-                      className={inputCls("vehiclePlate", "uppercase")} />
+                    <input type="text" placeholder="ABC-1234 / ABC-1D23" maxLength={8} value={form.vehiclePlate}
+                      onChange={(e) => setField("vehiclePlate", formatPlate(e.target.value))} className={inputCls("vehiclePlate", "uppercase")} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Marca*</label>
-                    <input type="text" placeholder="Ex.: Toyota, Honda..."
-                      value={form.vehicleBrand}
-                      onChange={(e) => setField("vehicleBrand", e.target.value)}
-                      className={inputCls("vehicleBrand")} />
+                    <input type="text" placeholder="Ex.: Toyota, Honda..." value={form.vehicleBrand}
+                      onChange={(e) => setField("vehicleBrand", e.target.value)} className={inputCls("vehicleBrand")} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Modelo*</label>
-                    <input type="text" placeholder="Ex.: Corolla, CG 150..."
-                      value={form.vehicleModel}
-                      onChange={(e) => setField("vehicleModel", e.target.value)}
-                      className={inputCls("vehicleModel")} />
+                    <input type="text" placeholder="Ex.: Corolla, CG 150..." value={form.vehicleModel}
+                      onChange={(e) => setField("vehicleModel", e.target.value)} className={inputCls("vehicleModel")} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Ano modelo*</label>
-                    <input type="number" placeholder="Ex.: 2021" min={1950} max={2100}
-                      value={form.vehicleYear}
-                      onChange={(e) => setField("vehicleYear", e.target.value)}
-                      className={inputCls("vehicleYear")} />
+                    <input type="number" placeholder="Ex.: 2021" min={1950} max={2100} value={form.vehicleYear}
+                      onChange={(e) => setField("vehicleYear", e.target.value)} className={inputCls("vehicleYear")} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Tempo máximo sem uso*</label>
-                    <select value={form.vehicleMaxDays}
-                      onChange={(e) => setField("vehicleMaxDays", e.target.value)}
-                      className={selectCls("vehicleMaxDays")}>
+                    <select value={form.vehicleMaxDays} onChange={(e) => setField("vehicleMaxDays", e.target.value)} className={selectCls("vehicleMaxDays")}>
                       <option value="" disabled>Selecione</option>
                       {MAX_DAYS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                     </select>
@@ -987,13 +864,20 @@ const ContrateFisica = () => {
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium mb-2">Deseja poder bloquear seu veículo remotamente?*</label>
-                    <select value={form.remoteBlocking}
-                      onChange={(e) => setField("remoteBlocking", e.target.value)}
-                      className={selectCls("remoteBlocking")}>
+                    <select value={form.remoteBlocking} onChange={(e) => setField("remoteBlocking", e.target.value)} className={selectCls("remoteBlocking")}>
                       <option value="" disabled>Selecione</option>
                       <option value="sim">Sim</option>
                       <option value="nao">Não</option>
                     </select>
+                  </div>
+
+                  {/* Observação sobre frota */}
+                  <div className="md:col-span-2">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <p className="text-sm text-blue-700">
+                        <strong>Frota (múltiplos veículos):</strong> Caso possua mais de um veículo, preencha os dados de apenas um como referência. Nosso atendimento irá solicitar as informações dos demais veículos durante o processo de contratação.
+                      </p>
+                    </div>
                   </div>
 
                   {/* ═══ ENDEREÇO DA INSTALAÇÃO ═══ */}
@@ -1002,77 +886,54 @@ const ContrateFisica = () => {
 
                   <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3 mb-2">
                     <RadioChoice label="Mesmo endereço de cadastro" name="installChoice" value="same"
-                      checked={form.installAddressChoice === "same"}
-                      onChange={() => setField("installAddressChoice", "same")} />
+                      checked={form.installAddressChoice === "same"} onChange={() => setField("installAddressChoice", "same")} />
                     <RadioChoice label="Outro endereço" name="installChoice" value="other"
                       checked={form.installAddressChoice === "other"}
-                      onChange={() => {
-                        setField("installAddressChoice", "other");
-                        setForm((prev) => ({ ...prev, installCep: "", installUf: "", installCity: "", installNeighborhood: "", installStreet: "", installNumber: "", installComplement: "", installNote: "" }));
-                      }} />
+                      onChange={() => { setField("installAddressChoice", "other"); setForm((prev) => ({ ...prev, installCep: "", installUf: "", installCity: "", installNeighborhood: "", installStreet: "", installNumber: "", installComplement: "", installNote: "" })); }} />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium mb-2">CEP (instalação)*</label>
-                    <input type="text" placeholder="00000-000" inputMode="numeric" maxLength={9}
-                      value={form.installCep}
-                      onChange={(e) => setField("installCep", formatCEP(onlyDigits(e.target.value)))}
-                      onBlur={() => handleCepBlur("install")}
-                      disabled={form.installAddressChoice === "same"}
-                      className={inputCls("installCep", form.installAddressChoice === "same" ? "bg-muted opacity-60" : "")} />
+                    <input type="text" placeholder="00000-000" inputMode="numeric" maxLength={9} value={form.installCep}
+                      onChange={(e) => setField("installCep", formatCEP(onlyDigits(e.target.value)))} onBlur={() => handleCepBlur("install")}
+                      disabled={form.installAddressChoice === "same"} className={inputCls("installCep", form.installAddressChoice === "same" ? "bg-muted opacity-60" : "")} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">UF (instalação)*</label>
-                    <input type="text" placeholder="Digite o CEP" readOnly
-                      value={form.installUf}
-                      disabled={form.installAddressChoice === "same"}
-                      className={inputCls("installUf", "bg-muted opacity-60")} />
+                    <input type="text" readOnly value={form.installUf} disabled={form.installAddressChoice === "same"} className={inputCls("installUf", "bg-muted opacity-60")} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Cidade (instalação)*</label>
-                    <input type="text" placeholder="Digite o CEP" readOnly
-                      value={form.installCity}
-                      disabled={form.installAddressChoice === "same"}
-                      className={inputCls("installCity", "bg-muted opacity-60")} />
+                    <input type="text" readOnly value={form.installCity} disabled={form.installAddressChoice === "same"} className={inputCls("installCity", "bg-muted opacity-60")} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Bairro (instalação)*</label>
-                    <input type="text" placeholder="Bairro"
-                      value={form.installNeighborhood}
-                      onChange={(e) => setField("installNeighborhood", e.target.value)}
-                      disabled={form.installAddressChoice === "same"}
+                    <input type="text" placeholder="Bairro" value={form.installNeighborhood}
+                      onChange={(e) => setField("installNeighborhood", e.target.value)} disabled={form.installAddressChoice === "same"}
                       className={inputCls("installNeighborhood", form.installAddressChoice === "same" ? "bg-muted opacity-60" : "")} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Rua/Avenida (instalação)*</label>
-                    <input type="text" placeholder="Rua/Avenida"
-                      value={form.installStreet}
-                      onChange={(e) => setField("installStreet", e.target.value)}
-                      disabled={form.installAddressChoice === "same"}
+                    <input type="text" placeholder="Rua/Avenida" value={form.installStreet}
+                      onChange={(e) => setField("installStreet", e.target.value)} disabled={form.installAddressChoice === "same"}
                       className={inputCls("installStreet", form.installAddressChoice === "same" ? "bg-muted opacity-60" : "")} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Número (instalação)*</label>
-                    <input type="text" placeholder="Número" inputMode="numeric"
-                      value={form.installNumber}
-                      onChange={(e) => setField("installNumber", e.target.value)}
-                      disabled={form.installAddressChoice === "same"}
+                    <input type="text" placeholder="Número" inputMode="numeric" value={form.installNumber}
+                      onChange={(e) => setField("installNumber", e.target.value)} disabled={form.installAddressChoice === "same"}
                       className={inputCls("installNumber", form.installAddressChoice === "same" ? "bg-muted opacity-60" : "")} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Complemento (instalação)</label>
-                    <input type="text" placeholder="Complemento"
-                      value={form.installComplement}
-                      onChange={(e) => setField("installComplement", e.target.value)}
-                      disabled={form.installAddressChoice === "same"}
+                    <input type="text" placeholder="Complemento" value={form.installComplement}
+                      onChange={(e) => setField("installComplement", e.target.value)} disabled={form.installAddressChoice === "same"}
                       className={inputCls("installComplement", form.installAddressChoice === "same" ? "bg-muted opacity-60" : "")} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Observação (instalação)</label>
-                    <input type="text" placeholder="Observação"
-                      value={form.installNote}
-                      onChange={(e) => setField("installNote", e.target.value)}
-                      disabled={form.installAddressChoice === "same"}
+                    <input type="text" placeholder="Observação" value={form.installNote}
+                      onChange={(e) => setField("installNote", e.target.value)} disabled={form.installAddressChoice === "same"}
                       className={inputCls("installNote", form.installAddressChoice === "same" ? "bg-muted opacity-60" : "")} />
                   </div>
 
@@ -1092,9 +953,7 @@ const ContrateFisica = () => {
 
                   <div>
                     <label className="block text-sm font-medium mb-2">Pagamento da instalação*</label>
-                    <select value={form.installationPayment}
-                      onChange={(e) => setField("installationPayment", e.target.value)}
-                      className={selectCls("installationPayment")}>
+                    <select value={form.installationPayment} onChange={(e) => setField("installationPayment", e.target.value)} className={selectCls("installationPayment")}>
                       <option value="" disabled>Selecione</option>
                       <option value="Cartão de crédito">Cartão de crédito</option>
                       <option value="PIX">PIX</option>
@@ -1103,9 +962,7 @@ const ContrateFisica = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Pagamento da mensalidade*</label>
-                    <select value={form.monthlyPayment}
-                      onChange={(e) => setField("monthlyPayment", e.target.value)}
-                      className={selectCls("monthlyPayment")}>
+                    <select value={form.monthlyPayment} onChange={(e) => setField("monthlyPayment", e.target.value)} className={selectCls("monthlyPayment")}>
                       <option value="" disabled>Selecione</option>
                       <option value="PIX">PIX</option>
                       <option value="Boleto">Boleto</option>
@@ -1113,9 +970,7 @@ const ContrateFisica = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Dia de vencimento*</label>
-                    <select value={form.monthlyDueDay}
-                      onChange={(e) => setField("monthlyDueDay", e.target.value)}
-                      className={selectCls("monthlyDueDay")}>
+                    <select value={form.monthlyDueDay} onChange={(e) => setField("monthlyDueDay", e.target.value)} className={selectCls("monthlyDueDay")}>
                       <option value="" disabled>Selecione</option>
                       <option value="10">Dia 10</option>
                       <option value="15">Dia 15</option>
@@ -1126,20 +981,9 @@ const ContrateFisica = () => {
                   {/* ═══ CUPOM ═══ */}
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium mb-2">Cupom de desconto/indicação (opcional):</label>
-                    <CheckboxChoice
-                      label="Marque aqui caso tenha um cupom de desconto/indicação"
-                      checked={hasCoupon}
-                      onChange={() => {
-                        setHasCoupon(!hasCoupon);
-                        if (hasCoupon) {
-                          setCouponInput("");
-                          setCouponApplied(null);
-                          setCouponAlert(null);
-                        }
-                      }}
-                    />
+                    <CheckboxChoice label="Marque aqui caso tenha um cupom de desconto/indicação" checked={hasCoupon}
+                      onChange={() => { setHasCoupon(!hasCoupon); if (hasCoupon) { setCouponInput(""); setCouponApplied(null); setCouponAlert(null); } }} />
                     <small className="block text-medium-gray text-xs mt-2">Se você não tem cupom, deixe desmarcado.</small>
-
                     {hasCoupon && (
                       <div className="mt-4">
                         <div className="flex flex-col sm:flex-row gap-3">
@@ -1164,7 +1008,7 @@ const ContrateFisica = () => {
                     )}
                   </div>
 
-                  {/* ═══ RESUMO DO PEDIDO ═══ */}
+                  {/* ═══ RESUMO ═══ */}
                   <Divider />
                   <div className="md:col-span-2">
                     <div className="border border-extra-medium-gray rounded-lg p-5 bg-muted">
@@ -1175,9 +1019,7 @@ const ContrateFisica = () => {
                         <p className="text-sm text-dark-gray"><strong>Mensalidade:</strong> {quote.monthlyLabel}</p>
                         <p className="text-sm text-dark-gray"><strong>Instalação:</strong> {quote.installLabel}</p>
                         {quote.couponLine && (
-                          <p className="text-sm text-dark-gray mt-2">
-                            <strong>Cupom:</strong> <span>{quote.couponLine}</span>
-                          </p>
+                          <p className="text-sm text-dark-gray mt-2"><strong>Cupom:</strong> <span>{quote.couponLine}</span></p>
                         )}
                       </div>
                       <div className="mt-4 space-y-2">
@@ -1204,27 +1046,19 @@ const ContrateFisica = () => {
                       className="border border-extra-medium-gray rounded-lg p-5 max-h-64 overflow-y-auto text-xs leading-relaxed whitespace-pre-wrap text-medium-gray mb-4">
                       {contractText || "Carregando contrato..."}
                     </div>
-
                     <label className={`flex items-center gap-3 border rounded-lg px-4 py-3 cursor-pointer transition select-none ${
                       !contractScrolled ? "opacity-50 border-extra-medium-gray" : "border-extra-medium-gray hover:border-base-color"
                     }`}>
-                      <input type="checkbox" checked={termsAccepted}
-                        disabled={!contractScrolled}
-                        onChange={(e) => setTermsAccepted(e.target.checked)}
-                        className="accent-base-color w-4 h-4" />
-                      <span className="text-sm">
-                        Li integralmente e concordo com o <strong>CONTRATO DE PRESTAÇÃO DE SERVIÇO</strong>
-                      </span>
+                      <input type="checkbox" checked={termsAccepted} disabled={!contractScrolled}
+                        onChange={(e) => setTermsAccepted(e.target.checked)} className="accent-base-color w-4 h-4" />
+                      <span className="text-sm">Li integralmente e concordo com o <strong>CONTRATO DE PRESTAÇÃO DE SERVIÇO</strong></span>
                     </label>
                     {!contractScrolled && (
-                      <small className="block text-medium-gray text-xs mt-2">
-                        Role o contrato até o final para habilitar o aceite.
-                      </small>
+                      <small className="block text-medium-gray text-xs mt-2">Role o contrato até o final para habilitar o aceite.</small>
                     )}
                   </div>
 
                   {/* ═══ SUBMIT ═══ */}
-                  {/* Collected data display */}
                   <CollectedDataFooter />
 
                   <div className="md:col-span-2">
@@ -1251,4 +1085,4 @@ const ContrateFisica = () => {
   );
 };
 
-export default ContrateFisica;
+export default ContrateJuridica;
