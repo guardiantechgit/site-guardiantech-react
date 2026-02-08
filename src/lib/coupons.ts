@@ -14,18 +14,36 @@ export async function findCoupon(rawCode: string): Promise<Coupon | null> {
   const code = (rawCode || "").trim().toUpperCase();
   if (!code) return null;
 
-  const { data, error } = await supabase.rpc("validate_coupon", { coupon_code: code });
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/validate-coupon`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          ...(session?.access_token ? { "Authorization": `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({ code }),
+      }
+    );
 
-  if (error || !data || data.length === 0) return null;
+    if (!res.ok) return null;
 
-  const row = data[0];
-  return {
-    code: row.code,
-    install_discount_enabled: row.install_discount_enabled,
-    install_discount_mode: row.install_discount_mode as "percent" | "value",
-    install_discount_value: row.install_discount_value,
-    monthly_discount_enabled: row.monthly_discount_enabled,
-    monthly_discount_mode: row.monthly_discount_mode as "percent" | "value",
-    monthly_discount_value: row.monthly_discount_value,
-  };
+    const { coupon } = await res.json();
+    if (!coupon) return null;
+
+    return {
+      code: coupon.code,
+      install_discount_enabled: coupon.install_discount_enabled,
+      install_discount_mode: coupon.install_discount_mode as "percent" | "value",
+      install_discount_value: coupon.install_discount_value,
+      monthly_discount_enabled: coupon.monthly_discount_enabled,
+      monthly_discount_mode: coupon.monthly_discount_mode as "percent" | "value",
+      monthly_discount_value: coupon.monthly_discount_value,
+    };
+  } catch {
+    return null;
+  }
 }
