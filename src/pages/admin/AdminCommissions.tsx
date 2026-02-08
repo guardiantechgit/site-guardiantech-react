@@ -150,30 +150,30 @@ const AdminCommissions = () => {
         body { font-family: 'Be Vietnam Pro', Arial, sans-serif; padding: 0; color: #333; }
         
         .print-header {
-          background: #1a1a1a;
-          color: white;
-          padding: 24px 32px;
+          border-bottom: 3px solid #AF985A;
+          padding: 20px 32px;
           display: flex;
           align-items: center;
           justify-content: space-between;
         }
         .print-header img { height: 40px; }
-        .print-header-info { text-align: right; font-size: 11px; color: #ccc; }
-        .print-header-info strong { color: #AF985A; font-size: 13px; display: block; margin-bottom: 2px; }
+        .print-header-info { text-align: right; font-size: 11px; color: #777; }
+        .print-header-info strong { color: #AF985A; font-size: 14px; display: block; margin-bottom: 2px; }
 
         .print-title {
-          background: #AF985A;
-          color: white;
-          padding: 12px 32px;
-          font-size: 15px;
-          font-weight: 600;
+          border-bottom: 1px solid #e5e5e5;
+          padding: 10px 32px;
+          font-size: 14px;
+          font-weight: 700;
           letter-spacing: 0.5px;
+          color: #AF985A;
+          text-transform: uppercase;
         }
 
         .print-body { padding: 24px 32px; }
 
-        .rep-block { margin-bottom: 28px; page-break-inside: avoid; border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; }
-        .rep-header { background: #f8f8f6; padding: 16px 20px; border-bottom: 2px solid #AF985A; }
+        .rep-block { margin-bottom: 28px; page-break-inside: avoid; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; }
+        .rep-header { padding: 14px 20px; border-bottom: 2px solid #AF985A; }
         .rep-name { font-size: 16px; font-weight: 700; color: #1a1a1a; }
         .rep-info { font-size: 11px; color: #777; margin-top: 4px; display: flex; gap: 16px; flex-wrap: wrap; }
         .rep-info span { display: inline-flex; align-items: center; gap: 4px; }
@@ -182,35 +182,35 @@ const AdminCommissions = () => {
         .coupon-title { 
           font-weight: 600; font-size: 13px; color: #AF985A; 
           margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;
-          border-bottom: 1px dashed #e0d9c8; padding-bottom: 6px;
+          border-bottom: 1px dashed #ddd; padding-bottom: 6px;
         }
 
         .entries-table { width: 100%; border-collapse: collapse; font-size: 12px; }
         .entries-table th { 
           text-align: left; padding: 6px 8px; font-weight: 600; font-size: 10px; 
-          text-transform: uppercase; letter-spacing: 0.5px; color: #999; border-bottom: 1px solid #eee;
+          text-transform: uppercase; letter-spacing: 0.5px; color: #999; border-bottom: 1px solid #ddd;
         }
         .entries-table th:last-child { text-align: right; }
-        .entries-table td { padding: 7px 8px; border-bottom: 1px solid #f5f5f5; }
+        .entries-table td { padding: 7px 8px; border-bottom: 1px solid #f0f0f0; }
         .entries-table td:last-child { text-align: right; font-weight: 600; color: #1a1a1a; }
         .entries-table tr:last-child td { border-bottom: none; }
 
         .subtotal-row { 
           display: flex; justify-content: space-between; 
-          padding: 8px 20px; background: #fafaf8; font-size: 13px; font-weight: 600;
-          border-top: 1px solid #e5e5e5;
+          padding: 8px 20px; font-size: 13px; font-weight: 600;
+          border-top: 1px solid #ddd;
         }
 
         .grand-total { 
-          background: linear-gradient(135deg, #1a1a1a, #2a2a2a); color: white;
-          padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;
+          border-top: 2px solid #AF985A;
+          padding: 14px 20px; display: flex; justify-content: space-between; align-items: center;
         }
-        .grand-total-label { font-size: 14px; font-weight: 600; }
+        .grand-total-label { font-size: 14px; font-weight: 700; color: #1a1a1a; }
         .grand-total-value { font-size: 20px; font-weight: 700; color: #AF985A; }
-        .grand-total-pix { font-size: 10px; color: #aaa; margin-top: 2px; }
+        .grand-total-pix { font-size: 10px; color: #888; margin-top: 2px; }
 
         .print-footer {
-          margin-top: 32px; padding: 16px 32px; border-top: 2px solid #e5e5e5;
+          margin-top: 32px; padding: 16px 32px; border-top: 2px solid #ddd;
           font-size: 10px; color: #999; text-align: center;
         }
         .print-footer strong { color: #AF985A; }
@@ -218,14 +218,11 @@ const AdminCommissions = () => {
         @media print {
           body { padding: 0; }
           .rep-block { break-inside: avoid; }
-          .print-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          .print-title { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          .grand-total { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
       </style></head><body>
 
       <div class="print-header">
-        <img src="/images/logo-white.png" alt="GuardianTech" />
+        <img src="/images/logo-black.png" alt="GuardianTech" />
         <div class="print-header-info">
           <strong>Relatório de Comissões</strong>
           ${today}
