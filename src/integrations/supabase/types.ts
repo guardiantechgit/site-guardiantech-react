@@ -287,6 +287,27 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limits: {
+        Row: {
+          created_at: string
+          endpoint: string
+          id: string
+          ip_address: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          id?: string
+          ip_address: string
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          id?: string
+          ip_address?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -310,12 +331,26 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_old_rate_limits: { Args: never; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      validate_coupon: {
+        Args: { coupon_code: string }
+        Returns: {
+          code: string
+          id: string
+          install_discount_enabled: boolean
+          install_discount_mode: string
+          install_discount_value: number
+          monthly_discount_enabled: boolean
+          monthly_discount_mode: string
+          monthly_discount_value: number
+        }[]
       }
     }
     Enums: {

@@ -14,22 +14,18 @@ export async function findCoupon(rawCode: string): Promise<Coupon | null> {
   const code = (rawCode || "").trim().toUpperCase();
   if (!code) return null;
 
-  const { data } = await supabase
-    .from("coupons")
-    .select("*")
-    .eq("code", code)
-    .eq("active", true)
-    .maybeSingle();
+  const { data, error } = await supabase.rpc("validate_coupon", { coupon_code: code });
 
-  if (!data) return null;
+  if (error || !data || data.length === 0) return null;
 
+  const row = data[0];
   return {
-    code: data.code,
-    install_discount_enabled: data.install_discount_enabled,
-    install_discount_mode: data.install_discount_mode as "percent" | "value",
-    install_discount_value: data.install_discount_value,
-    monthly_discount_enabled: data.monthly_discount_enabled,
-    monthly_discount_mode: data.monthly_discount_mode as "percent" | "value",
-    monthly_discount_value: data.monthly_discount_value,
+    code: row.code,
+    install_discount_enabled: row.install_discount_enabled,
+    install_discount_mode: row.install_discount_mode as "percent" | "value",
+    install_discount_value: row.install_discount_value,
+    monthly_discount_enabled: row.monthly_discount_enabled,
+    monthly_discount_mode: row.monthly_discount_mode as "percent" | "value",
+    monthly_discount_value: row.monthly_discount_value,
   };
 }
