@@ -34,13 +34,42 @@ const emptyCoupon = {
   active: true,
   install_discount_enabled: false,
   install_discount_mode: "percent",
-  install_discount_value: 0,
+  install_discount_value: "",
   monthly_discount_enabled: false,
   monthly_discount_mode: "percent",
-  monthly_discount_value: 0,
+  monthly_discount_value: "",
   representative_id: "" as string,
   commission_mode: "fixed",
-  commission_value: 0,
+  commission_value: "",
+};
+
+// Mask: currency 0,01–999,99 or percent 0–100
+const formatMaskedValue = (raw: string, mode: string): string => {
+  const digits = raw.replace(/\D/g, "");
+  if (!digits) return "";
+  if (mode === "percent") {
+    const num = parseInt(digits, 10);
+    if (num > 100) return "100";
+    return String(num);
+  }
+  // fixed: treat as cents, max 99999 (999,99)
+  let cents = parseInt(digits, 10);
+  if (cents > 99999) cents = 99999;
+  const reais = Math.floor(cents / 100);
+  const centavos = cents % 100;
+  return `${reais},${String(centavos).padStart(2, "0")}`;
+};
+
+const parseMaskedToNumber = (value: string, mode: string): number => {
+  if (!value) return 0;
+  if (mode === "percent") return parseInt(value, 10) || 0;
+  return parseFloat(value.replace(",", ".")) || 0;
+};
+
+const numberToMasked = (value: number, mode: string): string => {
+  if (!value) return "";
+  if (mode === "percent") return String(Math.min(Math.round(value), 100));
+  return value.toFixed(2).replace(".", ",");
 };
 
 const AdminCoupons = () => {
@@ -83,13 +112,13 @@ const AdminCoupons = () => {
       active: c.active,
       install_discount_enabled: c.install_discount_enabled,
       install_discount_mode: c.install_discount_mode,
-      install_discount_value: c.install_discount_value,
+      install_discount_value: numberToMasked(c.install_discount_value, c.install_discount_mode),
       monthly_discount_enabled: c.monthly_discount_enabled,
       monthly_discount_mode: c.monthly_discount_mode,
-      monthly_discount_value: c.monthly_discount_value,
+      monthly_discount_value: numberToMasked(c.monthly_discount_value, c.monthly_discount_mode),
       representative_id: c.representative_id || "",
       commission_mode: c.commission_mode || "fixed",
-      commission_value: c.commission_value || 0,
+      commission_value: numberToMasked(c.commission_value || 0, c.commission_mode || "fixed"),
     });
     setDialogOpen(true);
   };
@@ -106,13 +135,13 @@ const AdminCoupons = () => {
       active: form.active,
       install_discount_enabled: form.install_discount_enabled,
       install_discount_mode: form.install_discount_mode,
-      install_discount_value: Number(form.install_discount_value) || 0,
+      install_discount_value: parseMaskedToNumber(form.install_discount_value, form.install_discount_mode),
       monthly_discount_enabled: form.monthly_discount_enabled,
       monthly_discount_mode: form.monthly_discount_mode,
-      monthly_discount_value: Number(form.monthly_discount_value) || 0,
+      monthly_discount_value: parseMaskedToNumber(form.monthly_discount_value, form.monthly_discount_mode),
       representative_id: form.representative_id || null,
       commission_mode: form.commission_mode,
-      commission_value: Number(form.commission_value) || 0,
+      commission_value: parseMaskedToNumber(form.commission_value, form.commission_mode),
     };
 
     if (editing) {
@@ -242,7 +271,7 @@ const AdminCoupons = () => {
                 <>
                   <label className="text-xs text-muted-foreground">Comissão sob instalação</label>
                   <div className="flex gap-3 items-center">
-                    <Select value={form.commission_mode} onValueChange={(v) => setForm({ ...form, commission_mode: v })}>
+                    <Select value={form.commission_mode} onValueChange={(v) => setForm({ ...form, commission_mode: v, commission_value: "" })}>
                       <SelectTrigger className="w-[120px] shrink-0">
                         <SelectValue />
                       </SelectTrigger>
@@ -254,11 +283,11 @@ const AdminCoupons = () => {
                     <div className="relative flex-1">
                       {form.commission_mode === "fixed" && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</span>}
                       <Input
-                        type="number" min={0}
+                        type="text" inputMode="numeric"
                         value={form.commission_value}
-                        onChange={(e) => setForm({ ...form, commission_value: Number(e.target.value) })}
+                        onChange={(e) => setForm({ ...form, commission_value: formatMaskedValue(e.target.value, form.commission_mode) })}
                         placeholder={form.commission_mode === "percent" ? "10" : "50,00"}
-                        className={form.commission_mode === "fixed" ? "pl-10" : ""}
+                        className={`${form.commission_mode === "fixed" ? "pl-10" : ""} [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
                       />
                       {form.commission_mode === "percent" && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>}
                     </div>
@@ -275,7 +304,7 @@ const AdminCoupons = () => {
               </div>
               {form.install_discount_enabled && (
                 <div className="flex gap-3 items-center">
-                  <Select value={form.install_discount_mode} onValueChange={(v) => setForm({ ...form, install_discount_mode: v })}>
+                  <Select value={form.install_discount_mode} onValueChange={(v) => setForm({ ...form, install_discount_mode: v, install_discount_value: "" })}>
                     <SelectTrigger className="w-[120px] shrink-0"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="percent">Percentual</SelectItem>
@@ -285,11 +314,11 @@ const AdminCoupons = () => {
                   <div className="relative flex-1">
                     {form.install_discount_mode === "fixed" && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</span>}
                     <Input
-                      type="number" min={0}
+                      type="text" inputMode="numeric"
                       value={form.install_discount_value}
-                      onChange={(e) => setForm({ ...form, install_discount_value: Number(e.target.value) })}
+                      onChange={(e) => setForm({ ...form, install_discount_value: formatMaskedValue(e.target.value, form.install_discount_mode) })}
                       placeholder={form.install_discount_mode === "percent" ? "10" : "50,00"}
-                      className={form.install_discount_mode === "fixed" ? "pl-10" : ""}
+                      className={`${form.install_discount_mode === "fixed" ? "pl-10" : ""} [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
                     />
                     {form.install_discount_mode === "percent" && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>}
                   </div>
@@ -305,7 +334,7 @@ const AdminCoupons = () => {
               </div>
               {form.monthly_discount_enabled && (
                 <div className="flex gap-3 items-center">
-                  <Select value={form.monthly_discount_mode} onValueChange={(v) => setForm({ ...form, monthly_discount_mode: v })}>
+                  <Select value={form.monthly_discount_mode} onValueChange={(v) => setForm({ ...form, monthly_discount_mode: v, monthly_discount_value: "" })}>
                     <SelectTrigger className="w-[120px] shrink-0"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="percent">Percentual</SelectItem>
@@ -315,11 +344,11 @@ const AdminCoupons = () => {
                   <div className="relative flex-1">
                     {form.monthly_discount_mode === "fixed" && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</span>}
                     <Input
-                      type="number" min={0}
+                      type="text" inputMode="numeric"
                       value={form.monthly_discount_value}
-                      onChange={(e) => setForm({ ...form, monthly_discount_value: Number(e.target.value) })}
+                      onChange={(e) => setForm({ ...form, monthly_discount_value: formatMaskedValue(e.target.value, form.monthly_discount_mode) })}
                       placeholder={form.monthly_discount_mode === "percent" ? "10" : "15,00"}
-                      className={form.monthly_discount_mode === "fixed" ? "pl-10" : ""}
+                      className={`${form.monthly_discount_mode === "fixed" ? "pl-10" : ""} [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
                     />
                     {form.monthly_discount_mode === "percent" && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>}
                   </div>
