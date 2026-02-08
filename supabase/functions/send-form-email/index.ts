@@ -145,15 +145,18 @@ serve(async (req: Request) => {
     const attachments: { filename: string; content: string }[] = [];
 
     // Download attachments from storage if URLs exist
-    const ALLOWED_DOC_TYPES = ["application/pdf", "image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
+    const isPJForm2 = d.form_type === "pj";
+    const docId = isPJForm2 ? (d.cnpj || "").replace(/\D/g, "") : (d.cpf || "").replace(/\D/g, "");
+    const docPrefix = isPJForm2 ? "DOC-PJ" : "DOC-PF";
 
-    for (const doc of [
-      { url: d.doc1_url, name: d.doc1_name },
-      { url: d.doc2_url, name: d.doc2_name },
-    ]) {
+    const docsToProcess = [
+      { url: d.doc1_url, name: d.doc1_name, seq: "01" },
+      { url: d.doc2_url, name: d.doc2_name, seq: "02" },
+    ];
+
+    for (const doc of docsToProcess) {
       if (!doc.url) continue;
       try {
-        // Extract the file path - handle both "documents/UUID.ext" and full URL formats
         let filePath = doc.url;
         const pathMatch = doc.url.match(/(?:\/)?documents\/(.+)$/);
         if (pathMatch) {
@@ -168,7 +171,6 @@ serve(async (req: Request) => {
           continue;
         }
         if (data) {
-          // Validate file size (10MB max)
           if (data.size > 10 * 1024 * 1024) {
             console.warn("Attachment too large, skipping:", doc.name);
             continue;
@@ -177,11 +179,14 @@ serve(async (req: Request) => {
           const base64 = btoa(
             new Uint8Array(arrayBuf).reduce((s, b) => s + String.fromCharCode(b), "")
           );
+          // Standardized filename: DOC-PF-00000000000-01.ext or DOC-PJ-00000000000000-01.ext
+          const origExt = (doc.name || "").split(".").pop()?.toLowerCase() || "pdf";
+          const standardName = `${docPrefix}-${docId}-${doc.seq}.${origExt}`;
           attachments.push({
-            filename: doc.name || "documento",
+            filename: standardName,
             content: base64,
           });
-          console.log("Attachment added:", doc.name, "size:", data.size);
+          console.log("Attachment added:", standardName, "size:", data.size);
         }
       } catch (e) {
         console.error("Error downloading attachment:", e);
@@ -303,7 +308,7 @@ serve(async (req: Request) => {
 
     const subjectName = isPJ ? (d.razao_social || d.full_name) : d.full_name;
     const emailPayload: any = {
-      from: "GuardianTech <noreply@guardiantech.site>",
+      from: "GuardianTech <contato@guardiantech.site>",
       to: ["contato.guardiantech@gmail.com", "rastreamento@guardiantech.site"],
       subject: `Nova contratação (${isPJ ? "PJ" : "PF"}): ${(subjectName || "").substring(0, 100)} — ${d.vehicle_plate || "Sem placa"}`,
       html,

@@ -106,7 +106,7 @@ serve(async (req: Request) => {
 </html>`;
 
     const emailResponse = await resend.emails.send({
-      from: "GuardianTech <noreply@guardiantech.site>",
+      from: "GuardianTech <contato@guardiantech.site>",
       to: ["contato.guardiantech@gmail.com", "rastreamento@guardiantech.site"],
       subject: `Contato: ${nome.trim().substring(0, 100)}`,
       html,
