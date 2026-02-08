@@ -160,67 +160,67 @@ const AdminCommissions = () => {
       <style>
         @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Be Vietnam Pro', Arial, sans-serif; padding: 0; color: #333; font-size: 15px; }
+        body { font-family: 'Be Vietnam Pro', Arial, sans-serif; padding: 0; color: #333; font-size: 12px; }
         
         .print-header {
           border-bottom: 3px solid #AF985A;
-          padding: 24px 32px;
+          padding: 20px 28px;
           display: flex;
           align-items: center;
           justify-content: space-between;
         }
-        .print-header img { height: 70px; }
-        .print-header-info { text-align: right; font-size: 14px; color: #777; }
-        .print-header-info strong { color: #AF985A; font-size: 17px; display: block; margin-bottom: 2px; }
+        .print-header img { height: 55px; }
+        .print-header-info { text-align: right; font-size: 11px; color: #777; }
+        .print-header-info strong { color: #AF985A; font-size: 14px; display: block; margin-bottom: 2px; }
 
         .print-title {
           border-bottom: 1px solid #e5e5e5;
-          padding: 12px 32px;
-          font-size: 16px;
+          padding: 10px 28px;
+          font-size: 13px;
           font-weight: 700;
           letter-spacing: 0.5px;
           color: #AF985A;
           text-transform: uppercase;
         }
 
-        .print-body { padding: 24px 32px; }
+        .print-body { padding: 20px 28px; }
 
-        .rep-block { margin-bottom: 28px; page-break-inside: avoid; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; }
-        .rep-header { padding: 16px 20px; border-bottom: 2px solid #AF985A; }
-        .rep-name { font-size: 20px; font-weight: 700; color: #1a1a1a; }
-        .rep-info { font-size: 14px; color: #555; margin-top: 6px; display: flex; gap: 20px; flex-wrap: wrap; }
+        .rep-block { margin-bottom: 22px; page-break-inside: avoid; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; }
+        .rep-header { padding: 12px 16px; border-bottom: 2px solid #AF985A; }
+        .rep-name { font-size: 15px; font-weight: 700; color: #1a1a1a; }
+        .rep-info { font-size: 11px; color: #555; margin-top: 4px; display: flex; gap: 16px; flex-wrap: wrap; }
         .rep-info span { display: inline-flex; align-items: center; gap: 4px; }
 
-        .coupon-block { padding: 14px 20px; }
+        .coupon-block { padding: 10px 16px; }
         .coupon-title { 
-          font-weight: 600; font-size: 16px; color: #AF985A; 
-          margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;
-          border-bottom: 1px dashed #ddd; padding-bottom: 8px;
+          font-weight: 600; font-size: 12px; color: #AF985A; 
+          margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;
+          border-bottom: 1px dashed #ddd; padding-bottom: 6px;
         }
 
-        .entries-table { width: 100%; border-collapse: collapse; font-size: 15px; }
+        .entries-table { width: 100%; border-collapse: collapse; font-size: 11px; }
         .entries-table th { 
-          text-align: left; padding: 8px 10px; font-weight: 600; font-size: 13px; 
+          text-align: left; padding: 6px 8px; font-weight: 600; font-size: 10px; 
           text-transform: uppercase; letter-spacing: 0.5px; color: #888; border-bottom: 1px solid #ddd;
         }
         .entries-table th:last-child { text-align: right; }
-        .entries-table td { padding: 9px 10px; border-bottom: 1px solid #f0f0f0; }
+        .entries-table td { padding: 7px 8px; border-bottom: 1px solid #f0f0f0; }
         .entries-table td:last-child { text-align: right; font-weight: 600; color: #1a1a1a; }
         .entries-table tr:last-child td { border-bottom: none; }
 
         .subtotal-row { 
           display: flex; justify-content: space-between; 
-          padding: 10px 20px; font-size: 16px; font-weight: 600;
+          padding: 8px 16px; font-size: 12px; font-weight: 600;
           border-top: 1px solid #ddd;
         }
 
         .grand-total { 
           border-top: 2px solid #AF985A;
-          padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;
+          padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;
         }
-        .grand-total-label { font-size: 18px; font-weight: 700; color: #1a1a1a; }
-        .grand-total-value { font-size: 24px; font-weight: 700; color: #AF985A; }
-        .grand-total-pix { font-size: 13px; color: #888; margin-top: 2px; }
+        .grand-total-label { font-size: 14px; font-weight: 700; color: #1a1a1a; }
+        .grand-total-value { font-size: 18px; font-weight: 700; color: #AF985A; }
+        .grand-total-pix { font-size: 10px; color: #888; margin-top: 2px; }
 
         .print-footer {
           margin-top: 32px; padding: 16px 32px; border-top: 2px solid #ddd;

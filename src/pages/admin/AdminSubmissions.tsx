@@ -147,7 +147,7 @@ const AdminSubmissions = () => {
 
   const isPJ = selected?.form_type === "pj";
   const canConfirm = selected?.status === "lido";
-  const canCancel = selected?.status === "lido";
+  const canCancel = selected?.status !== "cancelado";
   const canInstall = selected?.status === "confirmado";
   const isInstalled = selected?.status === "instalado";
 
@@ -431,6 +431,10 @@ const AdminSubmissions = () => {
           <DialogHeader>
             <DialogTitle className="font-alt">Motivo do Cancelamento</DialogTitle>
           </DialogHeader>
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-2">
+            <p className="text-sm text-amber-800 font-medium">⚠️ Atenção: esta ação não poderá ser desfeita.</p>
+            <p className="text-xs text-amber-700 mt-1">O formulário será marcado como cancelado permanentemente.</p>
+          </div>
           <Textarea
             value={cancelReason}
             onChange={(e) => setCancelReason(e.target.value)}
