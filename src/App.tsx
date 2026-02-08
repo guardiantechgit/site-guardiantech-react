@@ -9,7 +9,9 @@ import Home from "@/pages/Home";
 import Sobre from "@/pages/Sobre";
 import Servicos from "@/pages/Servicos";
 import Contato from "@/pages/Contato";
+import Clientes from "@/pages/Clientes";
 import LandingRastreamento from "@/pages/LandingRastreamento";
+import EmConstrucao from "@/pages/EmConstrucao";
 import NotFound from "@/pages/NotFound";
 import ScrollToTop from "@/components/ScrollToTop";
 
@@ -28,7 +30,10 @@ const App = () => (
           <Route path="/sobre" element={<Sobre />} />
           <Route path="/servicos" element={<Servicos />} />
           <Route path="/contato" element={<Contato />} />
+          <Route path="/clientes" element={<Clientes />} />
           <Route path="/rastreamento" element={<LandingRastreamento />} />
+          <Route path="/controle-de-acesso" element={<EmConstrucao />} />
+          <Route path="/portaria-e-vigilancia" element={<EmConstrucao />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <Footer />

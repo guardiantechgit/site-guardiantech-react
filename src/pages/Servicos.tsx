@@ -14,14 +14,14 @@ const services = [
     image: "/images/service-title-acesso.jpg",
     title: "Controle de Acesso",
     desc: "Automatize entradas e saídas com sistemas integrados, tags, biometria e softwares de controle.",
-    link: "#",
+    link: "/controle-de-acesso",
     external: false,
   },
   {
     image: "/images/service-title-portaria.jpg",
     title: "Portaria e Vigilância",
     desc: "Serviços de portaria física e vigilância patrimonial, com rondas e equipe treinada sob demanda.",
-    link: "#",
+    link: "/portaria-e-vigilancia",
     external: false,
   },
 ];
