@@ -697,7 +697,7 @@ const ContrateJuridica = () => {
   return (
     <main>
       <PageSEO
-        title="Contrate Pessoa Jurídica - GuardianTech"
+        title="Contratar - Pessoa Jurídica - GuardianTech"
         description="Contrate o rastreamento veicular da GuardianTech para sua empresa. Preencha o formulário e proteja sua frota."
         ogImage="/images/title-landingr.jpg"
         path="/contrate-juridica"
