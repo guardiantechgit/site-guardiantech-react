@@ -36,23 +36,26 @@ const VideoModal = ({ videoUrl, children }: VideoModalProps) => {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="relative w-full max-w-4xl aspect-video"
+              className="relative w-full max-w-4xl mx-auto"
+              style={{ margin: "auto" }}
               onClick={(e) => e.stopPropagation()}
             >
               <button
                 onClick={() => setIsOpen(false)}
-                className="absolute -top-10 right-0 text-white hover:text-white/70 transition"
+                className="absolute -top-10 right-0 text-white hover:text-white/70 transition z-10"
               >
                 <X size={28} />
               </button>
               {videoId && (
-                <iframe
-                  src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`}
-                  title="YouTube video"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  className="w-full h-full rounded-lg"
-                />
+                <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+                  <iframe
+                    src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`}
+                    title="YouTube video"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="absolute inset-0 w-full h-full rounded-lg"
+                  />
+                </div>
               )}
             </motion.div>
           </motion.div>

@@ -1,8 +1,10 @@
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Printer } from "lucide-react";
+import { FileText, Printer, Copy, Check } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface Representative {
   id: string;
@@ -37,6 +39,7 @@ interface CommissionEntry {
   installValue: number;
   couponCode: string;
   date: string;
+  rawDate: Date;
 }
 
 interface RepReport {
@@ -49,16 +52,43 @@ interface RepReport {
   grandTotal: number;
 }
 
+type DateFilter = "current_month" | "last_month" | "custom";
+
+function getMonthRange(offset: number): { start: Date; end: Date } {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+  const end = new Date(now.getFullYear(), now.getMonth() + offset + 1, 0, 23, 59, 59, 999);
+  return { start, end };
+}
+
+function formatDateInput(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
 const AdminCommissions = () => {
   const [reports, setReports] = useState<RepReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterRep, setFilterRep] = useState<string>("all");
   const [allReps, setAllReps] = useState<Representative[]>([]);
+  const [dateFilter, setDateFilter] = useState<DateFilter>("current_month");
+  const [customStart, setCustomStart] = useState(() => formatDateInput(getMonthRange(0).start));
+  const [customEnd, setCustomEnd] = useState(() => formatDateInput(getMonthRange(0).end));
+  const [copiedPix, setCopiedPix] = useState<string | null>(null);
   const reportRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  const getDateRange = (): { start: Date; end: Date } => {
+    if (dateFilter === "last_month") return getMonthRange(-1);
+    if (dateFilter === "current_month") return getMonthRange(0);
+    return {
+      start: new Date(customStart + "T00:00:00"),
+      end: new Date(customEnd + "T23:59:59.999"),
+    };
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -76,7 +106,6 @@ const AdminCommissions = () => {
 
     setAllReps(reps);
 
-    // Build map: rep -> coupons -> eligible submissions
     const repMap = new Map<string, RepReport>();
 
     for (const rep of reps) {
@@ -86,7 +115,6 @@ const AdminCommissions = () => {
       const couponReports: RepReport["coupons"] = [];
 
       for (const coupon of repCoupons) {
-        // Only paid+installed submissions count for commission
         const eligibleSubs = subs.filter(
           s => s.coupon_code?.toUpperCase() === coupon.code.toUpperCase()
             && s.status === "instalado"
@@ -107,6 +135,7 @@ const AdminCommissions = () => {
             installValue: installVal,
             couponCode: coupon.code,
             date: new Date(s.created_at).toLocaleDateString("pt-BR"),
+            rawDate: new Date(s.created_at),
           };
         });
 
@@ -130,15 +159,51 @@ const AdminCommissions = () => {
     setLoading(false);
   };
 
-  const filteredReports = filterRep === "all" ? reports : reports.filter(r => r.rep.id === filterRep);
+  // Apply date filter to reports
+  const applyDateFilter = (reps: RepReport[]): RepReport[] => {
+    const { start, end } = getDateRange();
+    return reps.map(report => {
+      const filteredCoupons = report.coupons
+        .map(coupon => {
+          const filteredEntries = coupon.entries.filter(e => e.rawDate >= start && e.rawDate <= end);
+          return { ...coupon, entries: filteredEntries, total: filteredEntries.reduce((sum, e) => sum + e.commissionAmount, 0) };
+        })
+        .filter(c => c.entries.length > 0);
+
+      return {
+        ...report,
+        coupons: filteredCoupons,
+        grandTotal: filteredCoupons.reduce((sum, c) => sum + c.total, 0),
+      };
+    }).filter(r => r.coupons.length > 0);
+  };
+
+  const filteredByRep = filterRep === "all" ? reports : reports.filter(r => r.rep.id === filterRep);
+  const filteredReports = applyDateFilter(filteredByRep);
 
   const formatCurrency = (v: number) => `R$ ${v.toFixed(2).replace(".", ",")}`;
+
+  const copyPix = async (pixKey: string) => {
+    try {
+      await navigator.clipboard.writeText(pixKey);
+      setCopiedPix(pixKey);
+      toast({ title: "Chave PIX copiada!" });
+      setTimeout(() => setCopiedPix(null), 2000);
+    } catch {
+      toast({ title: "Erro ao copiar", variant: "destructive" });
+    }
+  };
+
+  const dateFilterLabel = (): string => {
+    const { start, end } = getDateRange();
+    const fmt = (d: Date) => d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+    return `${fmt(start)} — ${fmt(end)}`;
+  };
 
   const handlePrint = async () => {
     const printContent = reportRef.current;
     if (!printContent) return;
 
-    // Convert logo to base64 so it works in the print window
     let logoBase64 = "";
     try {
       const resp = await fetch("/images/logo-rastreamento-branco.png");
@@ -154,6 +219,7 @@ const AdminCommissions = () => {
     if (!win) return;
 
     const today = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+    const periodLabel = dateFilterLabel();
 
     win.document.write(`
       <html><head><title>Relatório de Comissões — GuardianTech</title>
@@ -181,6 +247,12 @@ const AdminCommissions = () => {
           letter-spacing: 0.5px;
           color: #AF985A;
           text-transform: uppercase;
+        }
+        .print-period {
+          padding: 6px 28px;
+          font-size: 11px;
+          color: #777;
+          border-bottom: 1px solid #e5e5e5;
         }
 
         .print-body { padding: 20px 28px; }
@@ -243,6 +315,7 @@ const AdminCommissions = () => {
       </div>
 
       <div class="print-title">COMISSÕES POR REPRESENTANTE</div>
+      <div class="print-period">Período: ${periodLabel}</div>
 
       <div class="print-body">
         ${filteredReports.map(report => `
@@ -310,7 +383,7 @@ const AdminCommissions = () => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <Select value={filterRep} onValueChange={setFilterRep}>
             <SelectTrigger className="w-64">
               <SelectValue placeholder="Filtrar por representante" />
@@ -322,11 +395,44 @@ const AdminCommissions = () => {
               ))}
             </SelectContent>
           </Select>
+
+          <Select value={dateFilter} onValueChange={(v) => setDateFilter(v as DateFilter)}>
+            <SelectTrigger className="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="current_month">Mês atual</SelectItem>
+              <SelectItem value="last_month">Mês anterior</SelectItem>
+              <SelectItem value="custom">Intervalo personalizado</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {dateFilter === "custom" && (
+            <div className="flex items-center gap-2">
+              <Input
+                type="date"
+                value={customStart}
+                onChange={(e) => setCustomStart(e.target.value)}
+                className="w-40"
+              />
+              <span className="text-muted-foreground text-sm">até</span>
+              <Input
+                type="date"
+                value={customEnd}
+                onChange={(e) => setCustomEnd(e.target.value)}
+                className="w-40"
+              />
+            </div>
+          )}
         </div>
         <Button onClick={handlePrint} variant="outline" className="font-alt" disabled={filteredReports.length === 0}>
           <Printer size={16} className="mr-2" /> Imprimir / PDF
         </Button>
       </div>
+
+      <p className="text-xs text-muted-foreground">
+        Período: {dateFilterLabel()}
+      </p>
 
       {loading ? (
         <div className="text-center py-12 text-muted-foreground">Carregando...</div>
@@ -345,7 +451,19 @@ const AdminCommissions = () => {
                 <div className="rep-info flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground mt-1">
                   {report.rep.email && <span>E-mail: {report.rep.email}</span>}
                   {report.rep.phone && <span>Telefone: {report.rep.phone}</span>}
-                  {report.rep.pix_key && <span className="pix">PIX: {report.rep.pix_key}</span>}
+                  {report.rep.pix_key && (
+                    <span className="inline-flex items-center gap-1">
+                      PIX: {report.rep.pix_key}
+                      <button
+                        type="button"
+                        onClick={() => copyPix(report.rep.pix_key!)}
+                        className="text-muted-foreground hover:text-foreground transition p-0.5"
+                        title="Copiar chave PIX"
+                      >
+                        {copiedPix === report.rep.pix_key ? <Check size={12} className="text-green-600" /> : <Copy size={12} />}
+                      </button>
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -369,7 +487,7 @@ const AdminCommissions = () => {
                   </div>
                 ))}
 
-                <div className="grand-total bg-blue-50 rounded-lg p-4 flex justify-between items-center">
+                <div className="grand-total bg-muted/50 rounded-lg p-4 flex justify-between items-center">
                   <span className="font-alt font-bold text-foreground">Total a ser pago:</span>
                   <div className="text-right">
                     <span className="font-alt font-bold text-lg text-foreground">{formatCurrency(report.grandTotal)}</span>
