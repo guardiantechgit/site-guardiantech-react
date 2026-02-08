@@ -34,9 +34,19 @@ export function useAdminAuth() {
   }, [checkAuth]);
 
   const login = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    if (!email.trim() || !password.trim()) {
+      return { success: false, error: "Preencha o e-mail e a senha." };
+    }
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) return { success: false, error: error.message };
-    // checkAuth will be triggered by onAuthStateChange
+    if (error) {
+      const msg = error.message.toLowerCase();
+      let translated = "Credenciais inválidas.";
+      if (msg.includes("invalid login")) translated = "E-mail ou senha incorretos.";
+      else if (msg.includes("email not confirmed")) translated = "E-mail ainda não confirmado.";
+      else if (msg.includes("rate limit") || msg.includes("too many")) translated = "Muitas tentativas. Aguarde um momento.";
+      else if (msg.includes("network") || msg.includes("fetch")) translated = "Erro de conexão. Verifique sua internet.";
+      return { success: false, error: translated };
+    }
     return { success: true };
   }, []);
 
