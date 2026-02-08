@@ -417,19 +417,12 @@ export async function generateSubmissionPDF(s: Submission) {
       ${metaSection}
     </div>
 
-    <div class="print-footer">
-      <strong>GuardianTech</strong> — Segurança, Tecnologia e Rastreamento<br/>
-      Documento gerado em ${today} • Este documento é de uso interno.
-    </div>
-
     ${docPage}
 
-    ${hasDocPage ? `
     <div class="print-footer">
       <strong>GuardianTech</strong> — Segurança, Tecnologia e Rastreamento<br/>
       Documento gerado em ${today} • Este documento é de uso interno.
     </div>
-    ` : ""}
 
     </body></html>
   `);
