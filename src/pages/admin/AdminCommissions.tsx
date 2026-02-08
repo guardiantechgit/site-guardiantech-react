@@ -223,7 +223,7 @@ const AdminCommissions = () => {
       </style></head><body>
 
       <div class="print-header">
-        <img src="/images/logo-rastreamento-branco.png" alt="GuardianTech Rastreamento" />
+        <img src="${window.location.origin}/images/logo-rastreamento-branco.png" alt="GuardianTech Rastreamento" />
         <div class="print-header-info">
           <strong>Relatório de Comissões</strong>
           ${today}
