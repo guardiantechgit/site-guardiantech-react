@@ -140,28 +140,160 @@ const AdminCommissions = () => {
     const win = window.open("", "_blank");
     if (!win) return;
 
+    const today = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+
     win.document.write(`
-      <html><head><title>Relatório de Comissões</title>
+      <html><head><title>Relatório de Comissões — GuardianTech</title>
       <style>
-        body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
-        h1 { font-size: 20px; margin-bottom: 20px; }
-        .rep-block { margin-bottom: 30px; page-break-inside: avoid; }
-        .rep-header { background: #f3f4f6; padding: 12px; border-radius: 8px; margin-bottom: 10px; }
-        .rep-name { font-size: 16px; font-weight: bold; }
-        .rep-info { font-size: 12px; color: #666; }
-        .coupon-block { margin-left: 16px; margin-bottom: 12px; }
-        .coupon-title { font-weight: bold; font-size: 14px; margin-bottom: 6px; }
-        .entry { display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; }
-        .subtotal { font-weight: bold; border-top: 1px solid #ddd; padding-top: 4px; margin-top: 4px; }
-        .grand-total { font-size: 16px; font-weight: bold; background: #e0f2fe; padding: 10px; border-radius: 6px; margin-top: 10px; }
-        .pix { font-size: 13px; color: #666; }
+        @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Be Vietnam Pro', Arial, sans-serif; padding: 0; color: #333; }
+        
+        .print-header {
+          background: #1a1a1a;
+          color: white;
+          padding: 24px 32px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+        .print-header img { height: 40px; }
+        .print-header-info { text-align: right; font-size: 11px; color: #ccc; }
+        .print-header-info strong { color: #AF985A; font-size: 13px; display: block; margin-bottom: 2px; }
+
+        .print-title {
+          background: #AF985A;
+          color: white;
+          padding: 12px 32px;
+          font-size: 15px;
+          font-weight: 600;
+          letter-spacing: 0.5px;
+        }
+
+        .print-body { padding: 24px 32px; }
+
+        .rep-block { margin-bottom: 28px; page-break-inside: avoid; border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; }
+        .rep-header { background: #f8f8f6; padding: 16px 20px; border-bottom: 2px solid #AF985A; }
+        .rep-name { font-size: 16px; font-weight: 700; color: #1a1a1a; }
+        .rep-info { font-size: 11px; color: #777; margin-top: 4px; display: flex; gap: 16px; flex-wrap: wrap; }
+        .rep-info span { display: inline-flex; align-items: center; gap: 4px; }
+
+        .coupon-block { padding: 12px 20px; }
+        .coupon-title { 
+          font-weight: 600; font-size: 13px; color: #AF985A; 
+          margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;
+          border-bottom: 1px dashed #e0d9c8; padding-bottom: 6px;
+        }
+
+        .entries-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .entries-table th { 
+          text-align: left; padding: 6px 8px; font-weight: 600; font-size: 10px; 
+          text-transform: uppercase; letter-spacing: 0.5px; color: #999; border-bottom: 1px solid #eee;
+        }
+        .entries-table th:last-child { text-align: right; }
+        .entries-table td { padding: 7px 8px; border-bottom: 1px solid #f5f5f5; }
+        .entries-table td:last-child { text-align: right; font-weight: 600; color: #1a1a1a; }
+        .entries-table tr:last-child td { border-bottom: none; }
+
+        .subtotal-row { 
+          display: flex; justify-content: space-between; 
+          padding: 8px 20px; background: #fafaf8; font-size: 13px; font-weight: 600;
+          border-top: 1px solid #e5e5e5;
+        }
+
+        .grand-total { 
+          background: linear-gradient(135deg, #1a1a1a, #2a2a2a); color: white;
+          padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .grand-total-label { font-size: 14px; font-weight: 600; }
+        .grand-total-value { font-size: 20px; font-weight: 700; color: #AF985A; }
+        .grand-total-pix { font-size: 10px; color: #aaa; margin-top: 2px; }
+
+        .print-footer {
+          margin-top: 32px; padding: 16px 32px; border-top: 2px solid #e5e5e5;
+          font-size: 10px; color: #999; text-align: center;
+        }
+        .print-footer strong { color: #AF985A; }
+
+        @media print {
+          body { padding: 0; }
+          .rep-block { break-inside: avoid; }
+          .print-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .print-title { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .grand-total { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
       </style></head><body>
-      <h1>Relatório de Comissões — ${new Date().toLocaleDateString("pt-BR")}</h1>
-      ${printContent.innerHTML}
+
+      <div class="print-header">
+        <img src="/images/logo-white.png" alt="GuardianTech" />
+        <div class="print-header-info">
+          <strong>Relatório de Comissões</strong>
+          ${today}
+        </div>
+      </div>
+
+      <div class="print-title">COMISSÕES POR REPRESENTANTE</div>
+
+      <div class="print-body">
+        ${filteredReports.map(report => `
+          <div class="rep-block">
+            <div class="rep-header">
+              <div class="rep-name">${report.rep.full_name}</div>
+              <div class="rep-info">
+                ${report.rep.email ? `<span>✉ ${report.rep.email}</span>` : ""}
+                ${report.rep.phone ? `<span>☎ ${report.rep.phone}</span>` : ""}
+                ${report.rep.pix_key ? `<span>◈ PIX: ${report.rep.pix_key}</span>` : ""}
+              </div>
+            </div>
+            ${report.coupons.map(coupon => `
+              <div class="coupon-block">
+                <div class="coupon-title">Cupom: ${coupon.code}</div>
+                <table class="entries-table">
+                  <thead>
+                    <tr>
+                      <th>Cliente</th>
+                      <th>Data</th>
+                      <th>Valor Instalação</th>
+                      <th>Comissão</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${coupon.entries.map(entry => `
+                      <tr>
+                        <td>${entry.submissionName}</td>
+                        <td>${entry.date}</td>
+                        <td>${formatCurrency(entry.installValue)}</td>
+                        <td>${formatCurrency(entry.commissionAmount)}</td>
+                      </tr>
+                    `).join("")}
+                  </tbody>
+                </table>
+              </div>
+              <div class="subtotal-row">
+                <span>Subtotal ${coupon.code}</span>
+                <span>${formatCurrency(coupon.total)}</span>
+              </div>
+            `).join("")}
+            <div class="grand-total">
+              <div>
+                <div class="grand-total-label">Total a Pagar</div>
+                ${report.rep.pix_key ? `<div class="grand-total-pix">Chave PIX: ${report.rep.pix_key}</div>` : ""}
+              </div>
+              <div class="grand-total-value">${formatCurrency(report.grandTotal)}</div>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+
+      <div class="print-footer">
+        <strong>GuardianTech</strong> — Segurança, Tecnologia e Rastreamento<br/>
+        Documento gerado em ${today} • Este relatório é de uso interno.
+      </div>
+
       </body></html>
     `);
     win.document.close();
-    win.print();
+    setTimeout(() => win.print(), 300);
   };
 
   return (
