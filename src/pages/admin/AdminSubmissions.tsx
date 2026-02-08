@@ -57,6 +57,17 @@ const AdminSubmissions = () => {
     fetchSubmissions();
   };
 
+  const openDocument = async (storagePath: string) => {
+    // storagePath is like "documents/uuid.ext"
+    const path = storagePath.replace(/^documents\//, "");
+    const { data, error } = await supabase.storage
+      .from("documents")
+      .createSignedUrl(path, 3600);
+    if (data?.signedUrl) {
+      window.open(data.signedUrl, "_blank");
+    }
+  };
+
   const formatDate = (d: string) => {
     return new Date(d).toLocaleDateString("pt-BR", {
       day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
@@ -258,14 +269,14 @@ const AdminSubmissions = () => {
                     <h3 className="font-alt font-semibold text-foreground border-b pb-1 mb-3">Documentos</h3>
                     <div className="flex gap-4 flex-wrap">
                       {selected.doc1_url && (
-                        <a href={selected.doc1_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-base-color hover:underline text-sm">
+                        <button onClick={() => openDocument(selected.doc1_url!)} className="flex items-center gap-2 text-base-color hover:underline text-sm">
                           <Download size={14} /> {selected.doc1_name || "Documento 1"}
-                        </a>
+                        </button>
                       )}
                       {selected.doc2_url && (
-                        <a href={selected.doc2_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-base-color hover:underline text-sm">
+                        <button onClick={() => openDocument(selected.doc2_url!)} className="flex items-center gap-2 text-base-color hover:underline text-sm">
                           <Download size={14} /> {selected.doc2_name || "Documento 2"}
-                        </a>
+                        </button>
                       )}
                     </div>
                   </section>

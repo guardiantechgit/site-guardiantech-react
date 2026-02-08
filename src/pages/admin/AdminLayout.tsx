@@ -4,7 +4,7 @@ import { Tag, FileText, LogOut, Menu, X, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface Props {
-  onLogout: () => void;
+  onLogout: () => Promise<void> | void;
 }
 
 const navItems = [
