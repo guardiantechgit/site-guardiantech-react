@@ -196,8 +196,10 @@ export async function generateSubmissionPDF(s: Submission) {
     if (data.mimeType.startsWith("image/")) {
       return `<div class="doc-item"><p class="doc-name">${name}</p><img src="${data.dataUrl}" class="doc-image" /></div>`;
     }
-    // For PDFs, just show a link note since we can't embed
-    return `<div class="doc-item"><p class="doc-name">${name}</p><p class="doc-note">Documento PDF — disponível para download na plataforma.</p></div>`;
+    if (data.mimeType === "application/pdf") {
+      return `<div class="doc-item doc-item-pdf"><p class="doc-name">${name}</p><iframe src="${data.dataUrl}" class="doc-pdf"></iframe></div>`;
+    }
+    return `<div class="doc-item"><p class="doc-name">${name}</p><p class="doc-note">Documento disponível para download na plataforma.</p></div>`;
   }
 
   const docPage = hasDocPage
@@ -360,6 +362,15 @@ export async function generateSubmissionPDF(s: Submission) {
         max-width: 100%; 
         margin: 16px auto; 
         padding: 0 16px;
+      }
+      .doc-pdf {
+        width: 100%;
+        height: 80vh;
+        border: none;
+        display: block;
+      }
+      .doc-item-pdf {
+        page-break-before: always;
       }
       .doc-note {
         padding: 16px;
