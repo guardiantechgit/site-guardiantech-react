@@ -2,24 +2,31 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Eye, Search, Download } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Eye, Search, Download, CheckCircle, XCircle, Truck, CreditCard } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
-type Submission = Tables<"form_submissions">;
+type Submission = Tables<"form_submissions"> & {
+  cancellation_reason?: string | null;
+  installation_paid?: boolean;
+};
 
 const statusColors: Record<string, string> = {
-  novo: "bg-blue-100 text-blue-700",
-  em_analise: "bg-yellow-100 text-yellow-700",
-  aprovado: "bg-emerald-100 text-emerald-700",
-  recusado: "bg-red-100 text-red-700",
+  recebido: "bg-blue-100 text-blue-700",
+  lido: "bg-sky-100 text-sky-700",
+  confirmado: "bg-emerald-100 text-emerald-700",
+  cancelado: "bg-red-100 text-red-700",
+  instalado: "bg-purple-100 text-purple-700",
 };
 
 const statusLabels: Record<string, string> = {
-  novo: "Novo",
-  em_analise: "Em análise",
-  aprovado: "Aprovado",
-  recusado: "Recusado",
+  recebido: "Recebido",
+  lido: "Lido",
+  confirmado: "Confirmado",
+  cancelado: "Cancelado",
+  instalado: "Instalado",
 };
 
 const AdminSubmissions = () => {
@@ -28,6 +35,8 @@ const AdminSubmissions = () => {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Submission | null>(null);
   const [tab, setTab] = useState<"pf" | "pj">("pf");
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
 
   const fetchSubmissions = async () => {
     setLoading(true);
@@ -35,7 +44,7 @@ const AdminSubmissions = () => {
       .from("form_submissions")
       .select("*")
       .order("created_at", { ascending: false });
-    setSubmissions(data || []);
+    setSubmissions((data || []) as Submission[]);
     setLoading(false);
   };
 
@@ -57,58 +66,87 @@ const AdminSubmissions = () => {
   const pfCount = submissions.filter((s) => (s.form_type || "pf") === "pf").length;
   const pjCount = submissions.filter((s) => s.form_type === "pj").length;
 
-  const updateStatus = async (id: string, status: string) => {
-    await supabase.from("form_submissions").update({ status }).eq("id", id);
-    if (selected && selected.id === id) setSelected({ ...selected, status });
+  const updateStatus = async (id: string, status: string, extra?: Record<string, unknown>) => {
+    await supabase.from("form_submissions").update({ status, ...extra }).eq("id", id);
+    if (selected && selected.id === id) setSelected({ ...selected, status, ...extra } as Submission);
     fetchSubmissions();
+  };
+
+  const handleOpenDetail = async (s: Submission) => {
+    setSelected(s);
+    // Mark as "lido" on first view
+    if (s.status === "recebido") {
+      await supabase.from("form_submissions").update({ status: "lido" }).eq("id", s.id);
+      setSelected({ ...s, status: "lido" });
+      fetchSubmissions();
+    }
+  };
+
+  const handleConfirm = () => {
+    if (!selected) return;
+    updateStatus(selected.id, "confirmado");
+  };
+
+  const handleCancel = () => {
+    if (!selected) return;
+    setCancelReason("");
+    setCancelDialogOpen(true);
+  };
+
+  const submitCancel = () => {
+    if (!selected || !cancelReason.trim()) return;
+    updateStatus(selected.id, "cancelado", { cancellation_reason: cancelReason.trim() });
+    setCancelDialogOpen(false);
+  };
+
+  const handleInstalled = () => {
+    if (!selected) return;
+    updateStatus(selected.id, "instalado");
+  };
+
+  const handleTogglePaid = () => {
+    if (!selected) return;
+    const newPaid = !(selected as any).installation_paid;
+    supabase.from("form_submissions").update({ installation_paid: newPaid }).eq("id", selected.id).then(() => {
+      setSelected({ ...selected, installation_paid: newPaid } as Submission);
+      fetchSubmissions();
+    });
   };
 
   const openDocument = async (storagePath: string) => {
     const path = storagePath.replace(/^documents\//, "");
-    const { data } = await supabase.storage
-      .from("documents")
-      .createSignedUrl(path, 3600);
-    if (data?.signedUrl) {
-      window.open(data.signedUrl, "_blank");
-    }
+    const { data } = await supabase.storage.from("documents").createSignedUrl(path, 3600);
+    if (data?.signedUrl) window.open(data.signedUrl, "_blank");
   };
 
-  const formatDate = (d: string) => {
-    return new Date(d).toLocaleDateString("pt-BR", {
-      day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
-    });
-  };
+  const formatDate = (d: string) =>
+    new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
-  const Field = ({ label, value }: { label: string; value: string | null | undefined }) => {
-    if (!value) return null;
+  const Field = ({ label, value }: { label: string; value: string | null | undefined | boolean }) => {
+    if (value === null || value === undefined || value === "") return null;
+    const display = typeof value === "boolean" ? (value ? "Sim" : "Não") : value;
     return (
       <div>
         <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{label}</span>
-        <p className="text-sm text-foreground mt-0.5">{value}</p>
+        <p className="text-sm text-foreground mt-0.5">{display}</p>
       </div>
     );
   };
 
   const isPJ = selected?.form_type === "pj";
+  const canConfirm = selected?.status === "lido";
+  const canCancel = selected?.status === "lido";
+  const canInstall = selected?.status === "confirmado";
+  const isInstalled = selected?.status === "instalado";
 
   return (
     <div className="space-y-4">
       {/* Tabs */}
       <div className="flex items-center gap-1 bg-muted p-1 rounded-lg w-fit">
-        <button
-          onClick={() => setTab("pf")}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-            tab === "pf" ? "bg-white text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
+        <button onClick={() => setTab("pf")} className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${tab === "pf" ? "bg-white text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
           Pessoa Física ({pfCount})
         </button>
-        <button
-          onClick={() => setTab("pj")}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-            tab === "pj" ? "bg-white text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
+        <button onClick={() => setTab("pj")} className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${tab === "pj" ? "bg-white text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
           Pessoa Jurídica ({pjCount})
         </button>
       </div>
@@ -116,12 +154,7 @@ const AdminSubmissions = () => {
       <div className="flex items-center gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={tab === "pf" ? "Buscar por nome, CPF, e-mail ou placa..." : "Buscar por razão social, CNPJ, e-mail ou placa..."}
-            className="pl-9"
-          />
+          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={tab === "pf" ? "Buscar por nome, CPF, e-mail ou placa..." : "Buscar por razão social, CNPJ, e-mail ou placa..."} className="pl-9" />
         </div>
         <p className="text-muted-foreground text-sm">{filtered.length} resultado(s)</p>
       </div>
@@ -131,9 +164,7 @@ const AdminSubmissions = () => {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/50">
-                <th className="text-left px-4 py-3 font-alt font-semibold text-foreground">
-                  {tab === "pf" ? "Nome" : "Razão Social"}
-                </th>
+                <th className="text-left px-4 py-3 font-alt font-semibold text-foreground">{tab === "pf" ? "Nome" : "Razão Social"}</th>
                 <th className="text-left px-4 py-3 font-alt font-semibold text-foreground">Veículo</th>
                 <th className="text-left px-4 py-3 font-alt font-semibold text-foreground">Plano</th>
                 <th className="text-left px-4 py-3 font-alt font-semibold text-foreground">Data</th>
@@ -148,10 +179,10 @@ const AdminSubmissions = () => {
                 <tr><td colSpan={6} className="text-center py-8 text-muted-foreground">Nenhum formulário encontrado</td></tr>
               ) : (
                 filtered.map((s) => (
-                  <tr key={s.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                  <tr key={s.id} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${s.status === "recebido" ? "font-semibold" : ""}`}>
                     <td className="px-4 py-3">
                       <p className="font-medium text-foreground">{s.razao_social || s.full_name}</p>
-                      <p className="text-xs text-muted-foreground">{s.email}</p>
+                      <p className="text-xs text-muted-foreground font-normal">{s.email}</p>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{s.vehicle_plate || "—"}</td>
                     <td className="px-4 py-3 text-muted-foreground">{s.plan_name || "—"}</td>
@@ -162,7 +193,7 @@ const AdminSubmissions = () => {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <Button variant="ghost" size="sm" onClick={() => setSelected(s)}>
+                      <Button variant="ghost" size="sm" onClick={() => handleOpenDetail(s)}>
                         <Eye size={14} className="mr-1" /> Ver
                       </Button>
                     </td>
@@ -183,37 +214,62 @@ const AdminSubmissions = () => {
                 <DialogTitle className="font-alt">{selected.razao_social || selected.full_name}</DialogTitle>
               </DialogHeader>
 
-              <div className="space-y-1 mb-4">
-                <div className="flex items-center gap-2 flex-wrap">
-                  {(["novo", "em_analise", "aprovado", "recusado"] as const).map((st) => (
-                    <button
-                      key={st}
-                      onClick={() => updateStatus(selected.id, st)}
-                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                        selected.status === st
-                          ? statusColors[st]
-                          : "bg-muted text-muted-foreground hover:bg-muted/80"
-                      }`}
-                    >
-                      {statusLabels[st]}
-                    </button>
-                  ))}
-                </div>
+              {/* Status badge */}
+              <div className="flex items-center gap-2 flex-wrap mb-2">
+                <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[selected.status] || "bg-gray-100 text-gray-700"}`}>
+                  {statusLabels[selected.status] || selected.status}
+                </span>
+                {isInstalled && (
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${(selected as any).installation_paid ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                    {(selected as any).installation_paid ? "Instalação paga" : "Instalação pendente"}
+                  </span>
+                )}
               </div>
+
+              {/* Action buttons */}
+              <div className="flex items-center gap-2 flex-wrap mb-4">
+                {canConfirm && (
+                  <Button size="sm" onClick={handleConfirm} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                    <CheckCircle size={14} className="mr-1" /> Confirmar
+                  </Button>
+                )}
+                {canCancel && (
+                  <Button size="sm" variant="destructive" onClick={handleCancel}>
+                    <XCircle size={14} className="mr-1" /> Cancelar
+                  </Button>
+                )}
+                {canInstall && (
+                  <Button size="sm" onClick={handleInstalled} className="bg-purple-600 hover:bg-purple-700 text-white">
+                    <Truck size={14} className="mr-1" /> Marcar Instalado
+                  </Button>
+                )}
+                {isInstalled && (
+                  <Button size="sm" variant="outline" onClick={handleTogglePaid}>
+                    <CreditCard size={14} className="mr-1" />
+                    {(selected as any).installation_paid ? "Desfazer pagamento" : "Marcar como pago"}
+                  </Button>
+                )}
+              </div>
+
+              {/* Cancellation reason */}
+              {selected.status === "cancelado" && (selected as any).cancellation_reason && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                  <span className="text-xs font-medium text-red-600 uppercase">Motivo do cancelamento</span>
+                  <p className="text-sm text-red-800 mt-1">{(selected as any).cancellation_reason}</p>
+                </div>
+              )}
 
               <div className="space-y-6 text-sm">
                 {/* Dados */}
                 <section>
-                  <h3 className="font-alt font-semibold text-foreground border-b pb-1 mb-3">
-                    {isPJ ? "Dados da Empresa" : "Dados Pessoais"}
-                  </h3>
+                  <h3 className="font-alt font-semibold text-foreground border-b pb-1 mb-3">{isPJ ? "Dados da Empresa" : "Dados Pessoais"}</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {isPJ ? (
                       <>
                         <Field label="Razão Social" value={selected.razao_social} />
                         <Field label="Nome Fantasia" value={selected.nome_fantasia} />
                         <Field label="CNPJ" value={selected.cnpj} />
-                        <Field label="Inscrição Estadual" value={selected.ie} />
+                        <Field label="Inscrição Estadual" value={selected.ie_isento ? "Isento" : selected.ie} />
                       </>
                     ) : (
                       <>
@@ -255,7 +311,7 @@ const AdminSubmissions = () => {
                   </div>
                 </section>
 
-                {/* Contato Financeiro (PJ only) */}
+                {/* Contato Financeiro (PJ) */}
                 {isPJ && (selected.financial_name || selected.financial_phone || selected.financial_email) && (
                   <section>
                     <h3 className="font-alt font-semibold text-foreground border-b pb-1 mb-3">Contato do Financeiro</h3>
@@ -355,6 +411,27 @@ const AdminSubmissions = () => {
               </div>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancel reason dialog */}
+      <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-alt">Motivo do Cancelamento</DialogTitle>
+          </DialogHeader>
+          <Textarea
+            value={cancelReason}
+            onChange={(e) => setCancelReason(e.target.value)}
+            placeholder="Descreva o motivo do cancelamento..."
+            rows={4}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCancelDialogOpen(false)}>Voltar</Button>
+            <Button variant="destructive" onClick={submitCancel} disabled={!cancelReason.trim()}>
+              Confirmar Cancelamento
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
