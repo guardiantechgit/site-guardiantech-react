@@ -86,12 +86,15 @@
   }
   /* Standard form typography */
   input, select, textarea, button {
-    font-family: var(--font-primary);
-  }
-  select, option {
-    font-family: var(--font-primary);
+    font-family: var(--font-primary) !important;
     font-size: 0.875rem;
     line-height: 1.25rem;
+  }
+  select option {
+    font-family: var(--font-primary) !important;
+    font-size: 0.875rem;
+    line-height: 1.5rem;
+    padding: 4px 8px;
   }
   label {
     font-family: var(--font-primary);
