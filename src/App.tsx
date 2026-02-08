@@ -37,6 +37,7 @@ const AppRoutes = () => {
         <Route path="/clientes" element={<Clientes />} />
         <Route path="/rastreamento" element={<LandingRastreamento />} />
         <Route path="/controle-de-acesso" element={<EmConstrucao />} />
+        <Route path="/landingr" element={<LandingRastreamento />} />
         <Route path="/contrate-fisica" element={<ContrateFisica />} />
         <Route path="/contrate-juridica" element={<ContrateJuridica />} />
         <Route path="/portaria-e-vigilancia" element={<EmConstrucao />} />
