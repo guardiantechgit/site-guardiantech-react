@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-<head>
+  <head>
     <script>
       (function () {
         try {
@@ -9,103 +9,130 @@
           var isIpadOS = /Macintosh/.test(ua) && navigator.maxTouchPoints > 1;
           var isMobileCH = (navigator.userAgentData && navigator.userAgentData.mobile) === true;
           if (isMobileUA || isIpadOS || isMobileCH) {
-            window.location.replace('https://guardiantech.site/guardiantrack');
+            window.location.replace('https://guardiantech.site/app');
           }
         } catch (_) {}
       })();
     </script>
-  
-	<title>GuardianTech - Plataforma Web</title>
-	<meta charset="utf-8">
-	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
-	<meta name="author" content="GuardianTech">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<meta name="description" content="Plataforma Web do GuardianTrack - App de Rastreamento.">
-	<meta name="keywords" content="rastreadores, bragança paulista, socorro, serra negra, atibaia, zona rural, tratores, caminhão, carga, rastreamento veicular, rastreador de carro, rastreador de moto, rastreador de caminhão, rastreador de barco, rastreamento de cargas, rastreador agrícola, GuardianTech, segurança eletrônica, CFTV, controle de acesso, automação residencial, redes cabeadas, redes Wi-Fi, vigilância, segurança patrimonial, tecnologia para condomínios e empresas">
-	<meta name="robots" content="index, follow">
-	<meta name="language" content="Portuguese">
-	<meta name="revisit-after" content="30 days">
-	<meta name="apple-mobile-web-app-title" content="GuardianTech">
-	<link rel="canonical" href="https://guardiantech.site" />
-	
-    <link rel="manifest" href="manifest.json">
 
-	<!-- favicon icons -->
-	<link rel="icon" type="image/png" href="image/favicon.png" />
+    <title>GuardianTech - Plataforma Web</title>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="author" content="GuardianTech" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Plataforma Web do GuardianTrack - App de Rastreamento." />
+    <meta
+      name="keywords"
+      content="rastreadores, bragança paulista, socorro, serra negra, atibaia, zona rural, tratores, caminhão, carga, rastreamento veicular, rastreador de carro, rastreador de moto, rastreador de caminhão, rastreador de barco, rastreamento de cargas, rastreador agrícola, GuardianTech, segurança eletrônica, CFTV, controle de acesso, automação residencial, redes cabeadas, redes Wi-Fi, vigilância, segurança patrimonial, tecnologia para condomínios e empresas"
+    />
+    <meta name="robots" content="index, follow" />
+    <meta name="language" content="Portuguese" />
+    <meta name="revisit-after" content="30 days" />
+    <meta name="apple-mobile-web-app-title" content="GuardianTech" />
+    <link rel="canonical" href="https://guardiantech.site" />
 
-	<!-- Open Graph Meta Tags -->
-	<meta property="og:title" content="GuardianTech - Plataforma Web" />
-	<meta property="og:type" content="website" />
-	<meta property="og:url" content="https://guardiantech.site" />
-	<meta property="og:description" content="Acesse a Plataforma Web de Rastreamento." />
-	<meta property="og:site_name" content="GuardianTech" />
+    <link rel="manifest" href="manifest.json" />
 
-	<!-- google fonts preconnect -->
-	<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <!-- favicon icons -->
+    <link rel="icon" type="image/png" href="image/favicon.png" />
 
-</head>
-<body>
-    <img src="image/logoGtBk.png" alt="Logo Fundo" class="body-logo-bg">
-        <script>
-            document.addEventListener('contextmenu', function(e) {
-                e.preventDefault();
-            });
-            document.addEventListener('keydown', function(e) {
-                if (
-                    e.key === 'F12' ||
-                    (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) ||
-                    (e.ctrlKey && (e.key === 'U' || e.key === 'S' || e.key === 'C'))
-                ) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    return false;
-                }
-            });
-            document.addEventListener('selectstart', function(e) {
-                e.preventDefault();
-            });
-        </script>
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="GuardianTech - Plataforma Web" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://guardiantech.site" />
+    <meta property="og:description" content="Acesse a Plataforma Web de Rastreamento." />
+    <meta property="og:site_name" content="GuardianTech" />
+
+    <!-- google fonts preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <img src="image/logoGtBk.png" alt="Logo Fundo" class="body-logo-bg" />
+    <script>
+      document.addEventListener('contextmenu', function(e) {
+          e.preventDefault();
+      });
+      document.addEventListener('keydown', function(e) {
+          if (
+              e.key === 'F12' ||
+              (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) ||
+              (e.ctrlKey && (e.key === 'U' || e.key === 'S' || e.key === 'C'))
+          ) {
+              e.preventDefault();
+              e.stopPropagation();
+              return false;
+          }
+      });
+      document.addEventListener('selectstart', function(e) {
+          e.preventDefault();
+      });
+    </script>
     <div class="login-container">
-        <form class="login-form" method="POST" action="https://sis.getrak.com/guardiantech">
-            <img src="image/guardianTechLogoLogin.png" alt="Logo GuardianTech" class="login-title-logo" style="height: 180px; margin-bottom: 18px; display: block; margin-left: auto; margin-right: auto;">
-            <div class="input-group">
-                <label for="login">Usuário</label>
-                <input type="text" name="login" id="login" title="Usuário" placeholder="Digite seu usuário" autocomplete="username" required>
-            </div>
-            <div class="input-group">
-                <label for="senha">Senha</label>
-                <input type="password" name="senha" id="senha" title="Senha" placeholder="Digite sua senha" autocomplete="current-password" required>
-            </div>
-            <div style="display: none; justify-content: flex-end; margin-bottom: 12px;">
-                <a href="https://sis.getrak.com/guardiantech/acesso/recuperacao" style="color: #B99955; font-size: 0.98rem; text-decoration: none;">Esqueceu a senha?</a>
-            </div>
-            <input type="submit" value="Entrar">
-        </form>
+      <form class="login-form" method="POST" action="https://sis.getrak.com/guardiantech">
+        <img
+          src="image/guardianTechLogoLogin.png"
+          alt="Logo GuardianTech"
+          class="login-title-logo"
+          style="height: 180px; margin-bottom: 18px; display: block; margin-left: auto; margin-right: auto;"
+        />
+        <div class="input-group">
+          <label for="login">Usuário</label>
+          <input
+            type="text"
+            name="login"
+            id="login"
+            title="Usuário"
+            placeholder="Digite seu usuário"
+            autocomplete="username"
+            required
+          />
+        </div>
+        <div class="input-group">
+          <label for="senha">Senha</label>
+          <input
+            type="password"
+            name="senha"
+            id="senha"
+            title="Senha"
+            placeholder="Digite sua senha"
+            autocomplete="current-password"
+            required
+          />
+        </div>
+        <div style="display: none; justify-content: flex-end; margin-bottom: 12px;">
+          <a
+            href="https://sis.getrak.com/guardiantech/acesso/recuperacao"
+            style="color: #B99955; font-size: 0.98rem; text-decoration: none;"
+            >Esqueceu a senha?</a
+          >
+        </div>
+        <input type="submit" value="Entrar" />
+      </form>
     </div>
     <footer class="footer">
-                <span>&copy; GuardianTech Segurança e Tecnologia 2025 | Todos os direitos reservados.</span>
-        <script>
-            let deferredPrompt;
-            const installBtn = document.getElementById('installBtn');
-            window.addEventListener('beforeinstallprompt', (e) => {
-                e.preventDefault();
-                deferredPrompt = e;
-                if (installBtn) installBtn.style.display = 'block';
+      <span>&copy; GuardianTech Segurança e Tecnologia 2025 | Todos os direitos reservados.</span>
+      <script>
+        let deferredPrompt;
+        const installBtn = document.getElementById('installBtn');
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            if (installBtn) installBtn.style.display = 'block';
+        });
+        if (installBtn) {
+            installBtn.addEventListener('click', async () => {
+                installBtn.style.display = 'none';
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    await deferredPrompt.userChoice;
+                    deferredPrompt = null;
+                }
             });
-            if (installBtn) {
-                installBtn.addEventListener('click', async () => {
-                    installBtn.style.display = 'none';
-                    if (deferredPrompt) {
-                        deferredPrompt.prompt();
-                        await deferredPrompt.userChoice;
-                        deferredPrompt = null;
-                    }
-                });
-            }
-        </script>
+        }
+      </script>
     </footer>
-</body>
+  </body>
 </html>
