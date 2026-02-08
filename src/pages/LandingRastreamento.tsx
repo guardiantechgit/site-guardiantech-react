@@ -160,9 +160,9 @@ const LandingRastreamento = () => {
       <section
         id="contato-whatsapp"
         className="relative py-20 bg-cover bg-center"
-        style={{ backgroundImage: "url(/images/background-seguranca.jpg)" }}
+        style={{ backgroundImage: "url(/images/background-rastreamento.jpg)" }}
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-dark-slate-blue/85 to-dark-slate-blue/60" />
+        <div className="absolute inset-0 bg-black/85" />
         <div className="container mx-auto px-4 relative z-10">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
             <div className="text-center lg:text-left">
