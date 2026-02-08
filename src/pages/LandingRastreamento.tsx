@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Car, Smartphone, Signal, CheckCircle, User, Briefcase, MessageCircle, ChevronDown } from "lucide-react";
 import AnimatedSection from "@/components/AnimatedSection";
+import VideoModal from "@/components/VideoModal";
 
 const plans = [
   {
@@ -70,9 +71,9 @@ const LandingRastreamento = () => {
       {/* Video */}
       <section id="video" className="py-20">
         <div className="container mx-auto px-4 text-center">
-          <a href="https://www.youtube.com/watch?v=14xXieeVy3c" target="_blank" rel="noreferrer" className="inline-block">
+          <VideoModal videoUrl="https://www.youtube.com/watch?v=14xXieeVy3c">
             <img src="/images/bar-presentation.jpg" alt="Apresentação" className="rounded-lg w-full max-w-4xl mx-auto shadow-lg hover:shadow-xl transition" loading="lazy" />
-          </a>
+          </VideoModal>
         </div>
       </section>
 
