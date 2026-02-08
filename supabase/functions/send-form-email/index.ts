@@ -74,28 +74,8 @@ serve(async (req: Request) => {
     const d = body.submission;
     const recaptchaToken = body.recaptchaToken;
 
-    // Verify reCAPTCHA
-    if (!recaptchaToken) {
-      return new Response(JSON.stringify({ error: "CAPTCHA não enviado." }), {
-        status: 400,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
-    }
-
-    const captchaRes = await fetch("https://www.google.com/recaptcha/api/siteverify", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: `secret=${RECAPTCHA_SECRET}&response=${recaptchaToken}`,
-    });
-    const captchaData = await captchaRes.json();
-
-    if (!captchaData.success || (captchaData.score !== undefined && captchaData.score < 0.5)) {
-      console.log("reCAPTCHA failed:", captchaData);
-      return new Response(JSON.stringify({ error: "Verificação CAPTCHA falhou." }), {
-        status: 403,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
-    }
+    // reCAPTCHA verification TEMPORARILY DISABLED
+    // TODO: Re-enable when using production domain
 
     // Server-side validation
     if (!d || typeof d !== "object") {

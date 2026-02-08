@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Smile, Phone, Mail, MessageSquare, Loader2 } from "lucide-react";
 import PageTitle from "@/components/PageTitle";
 import AnimatedSection from "@/components/AnimatedSection";
-import { useRecaptcha } from "@/hooks/useRecaptcha";
+// import { useRecaptcha } from "@/hooks/useRecaptcha"; // TEMPORARILY DISABLED
 import { supabase } from "@/integrations/supabase/client";
 
 const formatPhone = (value: string) => {
@@ -27,7 +27,7 @@ const Contato = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
-  const { getToken } = useRecaptcha();
+  // const { getToken } = useRecaptcha(); // TEMPORARILY DISABLED
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -45,15 +45,12 @@ const Contato = () => {
     setSubmitting(true);
 
     try {
-      const recaptchaToken = await getToken("contact_form");
-
       const { data, error } = await supabase.functions.invoke("send-contact-email", {
         body: {
           nome: form.nome.trim(),
           telefone: form.telefone,
           email: form.email.trim(),
           mensagem: form.mensagem.trim(),
-          recaptchaToken,
         },
       });
 
@@ -181,9 +178,7 @@ const Contato = () => {
                     >
                       {submitting ? <><Loader2 size={16} className="animate-spin" /> Enviando...</> : "Enviar mensagem"}
                     </button>
-                    <p className="text-xs text-medium-gray mt-2">
-                      Este formulário é protegido pelo reCAPTCHA do Google.
-                    </p>
+                    {/* reCAPTCHA temporarily disabled */}
                   </form>
                 )}
               </div>
