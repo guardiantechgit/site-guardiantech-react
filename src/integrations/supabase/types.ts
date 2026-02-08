@@ -14,7 +14,231 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      coupons: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          id: string
+          install_discount_enabled: boolean
+          install_discount_mode: string
+          install_discount_value: number
+          monthly_discount_enabled: boolean
+          monthly_discount_mode: string
+          monthly_discount_value: number
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          id?: string
+          install_discount_enabled?: boolean
+          install_discount_mode?: string
+          install_discount_value?: number
+          monthly_discount_enabled?: boolean
+          monthly_discount_mode?: string
+          monthly_discount_value?: number
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          id?: string
+          install_discount_enabled?: boolean
+          install_discount_mode?: string
+          install_discount_value?: number
+          monthly_discount_enabled?: boolean
+          monthly_discount_mode?: string
+          monthly_discount_value?: number
+        }
+        Relationships: []
+      }
+      form_submissions: {
+        Row: {
+          address_cep: string | null
+          address_city: string | null
+          address_complement: string | null
+          address_neighborhood: string | null
+          address_note: string | null
+          address_number: string | null
+          address_street: string | null
+          address_uf: string | null
+          birth_date: string | null
+          collected_at: string
+          coupon_code: string | null
+          coupon_description: string | null
+          cpf: string
+          created_at: string
+          doc1_name: string | null
+          doc1_url: string | null
+          doc2_name: string | null
+          doc2_url: string | null
+          email: string
+          emergency_name: string | null
+          emergency_phone: string | null
+          emergency_relationship: string | null
+          full_name: string
+          geolocation: string | null
+          id: string
+          install_address_choice: string | null
+          install_cep: string | null
+          install_city: string | null
+          install_complement: string | null
+          install_neighborhood: string | null
+          install_note: string | null
+          install_number: string | null
+          install_periods: string | null
+          install_street: string | null
+          install_uf: string | null
+          install_value: string | null
+          installation_payment: string | null
+          ip_address: string | null
+          monthly_due_day: string | null
+          monthly_payment: string | null
+          monthly_value: string | null
+          notes: string | null
+          phone_primary: string
+          phone_secondary: string | null
+          plan_name: string | null
+          platform_username: string | null
+          remote_blocking: string | null
+          rg: string
+          status: string
+          user_agent: string | null
+          user_agent_friendly: string | null
+          vehicle_brand: string | null
+          vehicle_color: string | null
+          vehicle_fuel: string | null
+          vehicle_max_days: string | null
+          vehicle_model: string | null
+          vehicle_plate: string | null
+          vehicle_type: string | null
+          vehicle_year: string | null
+        }
+        Insert: {
+          address_cep?: string | null
+          address_city?: string | null
+          address_complement?: string | null
+          address_neighborhood?: string | null
+          address_note?: string | null
+          address_number?: string | null
+          address_street?: string | null
+          address_uf?: string | null
+          birth_date?: string | null
+          collected_at?: string
+          coupon_code?: string | null
+          coupon_description?: string | null
+          cpf: string
+          created_at?: string
+          doc1_name?: string | null
+          doc1_url?: string | null
+          doc2_name?: string | null
+          doc2_url?: string | null
+          email: string
+          emergency_name?: string | null
+          emergency_phone?: string | null
+          emergency_relationship?: string | null
+          full_name: string
+          geolocation?: string | null
+          id?: string
+          install_address_choice?: string | null
+          install_cep?: string | null
+          install_city?: string | null
+          install_complement?: string | null
+          install_neighborhood?: string | null
+          install_note?: string | null
+          install_number?: string | null
+          install_periods?: string | null
+          install_street?: string | null
+          install_uf?: string | null
+          install_value?: string | null
+          installation_payment?: string | null
+          ip_address?: string | null
+          monthly_due_day?: string | null
+          monthly_payment?: string | null
+          monthly_value?: string | null
+          notes?: string | null
+          phone_primary: string
+          phone_secondary?: string | null
+          plan_name?: string | null
+          platform_username?: string | null
+          remote_blocking?: string | null
+          rg: string
+          status?: string
+          user_agent?: string | null
+          user_agent_friendly?: string | null
+          vehicle_brand?: string | null
+          vehicle_color?: string | null
+          vehicle_fuel?: string | null
+          vehicle_max_days?: string | null
+          vehicle_model?: string | null
+          vehicle_plate?: string | null
+          vehicle_type?: string | null
+          vehicle_year?: string | null
+        }
+        Update: {
+          address_cep?: string | null
+          address_city?: string | null
+          address_complement?: string | null
+          address_neighborhood?: string | null
+          address_note?: string | null
+          address_number?: string | null
+          address_street?: string | null
+          address_uf?: string | null
+          birth_date?: string | null
+          collected_at?: string
+          coupon_code?: string | null
+          coupon_description?: string | null
+          cpf?: string
+          created_at?: string
+          doc1_name?: string | null
+          doc1_url?: string | null
+          doc2_name?: string | null
+          doc2_url?: string | null
+          email?: string
+          emergency_name?: string | null
+          emergency_phone?: string | null
+          emergency_relationship?: string | null
+          full_name?: string
+          geolocation?: string | null
+          id?: string
+          install_address_choice?: string | null
+          install_cep?: string | null
+          install_city?: string | null
+          install_complement?: string | null
+          install_neighborhood?: string | null
+          install_note?: string | null
+          install_number?: string | null
+          install_periods?: string | null
+          install_street?: string | null
+          install_uf?: string | null
+          install_value?: string | null
+          installation_payment?: string | null
+          ip_address?: string | null
+          monthly_due_day?: string | null
+          monthly_payment?: string | null
+          monthly_value?: string | null
+          notes?: string | null
+          phone_primary?: string
+          phone_secondary?: string | null
+          plan_name?: string | null
+          platform_username?: string | null
+          remote_blocking?: string | null
+          rg?: string
+          status?: string
+          user_agent?: string | null
+          user_agent_friendly?: string | null
+          vehicle_brand?: string | null
+          vehicle_color?: string | null
+          vehicle_fuel?: string | null
+          vehicle_max_days?: string | null
+          vehicle_model?: string | null
+          vehicle_plate?: string | null
+          vehicle_type?: string | null
+          vehicle_year?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
