@@ -224,10 +224,10 @@ const ContrateFisica = () => {
     const found = await findCoupon(raw);
     if (found) {
       setCouponApplied(found);
-      setCouponAlert({ type: "success", text: `Cupom <strong>${found.code}</strong> válido.` });
+      setCouponAlert({ type: "success", text: `Cupom ${found.code} válido.` });
     } else {
       setCouponApplied(null);
-      setCouponAlert({ type: "danger", text: `Cupom <strong>${raw.toUpperCase()}</strong> inválido.` });
+      setCouponAlert({ type: "danger", text: `Cupom ${raw.toUpperCase()} inválido.` });
     }
   };
 
@@ -382,11 +382,11 @@ const ContrateFisica = () => {
 
       const uploadDoc = async (file: File, slot: number) => {
         const ext = file.name.split(".").pop() || "jpg";
-        const path = `${Date.now()}_${slot}.${ext}`;
+        const path = `${crypto.randomUUID()}.${ext}`;
         const { data, error } = await supabase.storage.from("documents").upload(path, file);
         if (error) throw new Error(`Erro ao enviar documento: ${error.message}`);
-        const { data: urlData } = supabase.storage.from("documents").getPublicUrl(path);
-        return { url: urlData.publicUrl, name: file.name };
+        // Store the storage path (not public URL) since bucket is private
+        return { url: `documents/${path}`, name: file.name };
       };
 
       if (docUpload.doc1) {
@@ -551,7 +551,7 @@ const ContrateFisica = () => {
                     "bg-blue-50 text-blue-700 border border-blue-200"
                   }`}>
                     <div className="flex justify-between items-start">
-                      <span dangerouslySetInnerHTML={{ __html: alertMsg.text }} />
+                      <span>{alertMsg.text}</span>
                       <button onClick={() => setAlertMsg(null)} className="ml-4 text-lg leading-none">&times;</button>
                     </div>
                   </div>
@@ -1022,7 +1022,7 @@ const ContrateFisica = () => {
                             couponAlert.type === "warning" ? "bg-yellow-50 text-yellow-700 border border-yellow-200" :
                             "bg-red-50 text-red-700 border border-red-200"
                           }`}>
-                            <span dangerouslySetInnerHTML={{ __html: couponAlert.text }} />
+                            <span>{couponAlert.text}</span>
                           </div>
                         )}
                       </div>
@@ -1041,7 +1041,7 @@ const ContrateFisica = () => {
                         <p className="text-sm text-dark-gray"><strong>Instalação:</strong> {quote.installLabel}</p>
                         {quote.couponLine && (
                           <p className="text-sm text-dark-gray mt-2">
-                            <strong>Cupom:</strong> <span dangerouslySetInnerHTML={{ __html: quote.couponLine }} />
+                            <strong>Cupom:</strong> <span>{quote.couponLine}</span>
                           </p>
                         )}
                       </div>

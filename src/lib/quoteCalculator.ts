@@ -80,7 +80,7 @@ export function computeQuote(
     );
     installFinal = final;
     if (label) {
-      couponLine = `<strong>${coupon.code}</strong> — desconto na instalação de <strong>${label}</strong>.`;
+      couponLine = `${coupon.code} — desconto na instalação de ${label}.`;
     }
   }
 
