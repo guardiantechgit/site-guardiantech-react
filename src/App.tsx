@@ -17,6 +17,7 @@ import ContrateJuridica from "@/pages/ContrateJuridica";
 import Admin from "@/pages/Admin";
 import NotFound from "@/pages/NotFound";
 import ScrollToTop from "@/components/ScrollToTop";
+import SiteLoader from "@/components/SiteLoader";
 
 const queryClient = new QueryClient();
 
@@ -25,7 +26,7 @@ const AppRoutes = () => {
   const isAdmin = location.pathname.startsWith("/admin");
 
   return (
-    <>
+    <SiteLoader>
       <ScrollToTop />
       {!isAdmin && <Header />}
       <Routes>
@@ -43,7 +44,7 @@ const AppRoutes = () => {
         <Route path="*" element={<NotFound />} />
       </Routes>
       {!isAdmin && <Footer />}
-    </>
+    </SiteLoader>
   );
 };
 
