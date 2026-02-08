@@ -658,6 +658,7 @@ const ContrateJuridica = () => {
 
   return (
     <main>
+      <SubmissionProgress steps={progressSteps} visible={showProgress} />
       <PageTitle title="Contrate agora" backgroundImage="/images/title-contato.jpg" />
 
       <section id="down-section" className="py-20">

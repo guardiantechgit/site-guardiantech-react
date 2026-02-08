@@ -77,10 +77,24 @@
     font-family: var(--font-primary);
     font-size: 17px;
     line-height: 32px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-alt);
     margin-bottom: 25px;
+  }
+  /* Standard form typography */
+  input, select, textarea, button {
+    font-family: var(--font-primary);
+  }
+  select, option {
+    font-family: var(--font-primary);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+  label {
+    font-family: var(--font-primary);
   }
 }
 
