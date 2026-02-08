@@ -155,7 +155,7 @@ serve(async (req: Request) => {
 </html>`;
 
     const emailPayload: any = {
-      from: "GuardianTech <onboarding@resend.dev>",
+      from: "GuardianTech <noreply@guardiantech.site>",
       to: ["contato.guardiantech@gmail.com", "rastreamento@guardiantech.site"],
       subject: `Nova contratação: ${d.full_name} — ${d.vehicle_plate || "Sem placa"}`,
       html,
