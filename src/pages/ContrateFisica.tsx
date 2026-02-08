@@ -9,6 +9,7 @@ import { computeQuote, type QuoteResult } from "@/lib/quoteCalculator";
 import { lookupViaCep } from "@/lib/viaCep";
 import { CONTRACT_TEXT } from "@/lib/contractText";
 import { useDocumentUpload } from "@/hooks/useDocumentUpload";
+import { useRecaptcha } from "@/hooks/useRecaptcha";
 import { supabase } from "@/integrations/supabase/client";
 
 // ── Types ──
@@ -116,6 +117,7 @@ const ContrateFisica = () => {
 
   // Document upload
   const docUpload = useDocumentUpload();
+  const { getToken } = useRecaptcha();
 
   // Quote
   const quote: QuoteResult = computeQuote(form.vehicleType, form.remoteBlocking, couponApplied);
@@ -327,6 +329,16 @@ const ContrateFisica = () => {
     setSubmitting(true);
 
     try {
+      // Get reCAPTCHA token
+      let recaptchaToken = "";
+      try {
+        recaptchaToken = await getToken("hire_form");
+      } catch {
+        showAlert("danger", "Erro na verificação CAPTCHA. Recarregue a página e tente novamente.");
+        setSubmitting(false);
+        return;
+      }
+
       // Collect metadata
       let ipAddress = "";
       try {
@@ -473,7 +485,7 @@ const ContrateFisica = () => {
       // Send email via edge function
       try {
         await supabase.functions.invoke("send-form-email", {
-          body: { submission },
+          body: { submission, recaptchaToken },
         });
       } catch (emailErr) {
         console.error("Email sending failed (form was saved):", emailErr);

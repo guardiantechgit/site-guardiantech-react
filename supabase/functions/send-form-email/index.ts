@@ -3,6 +3,7 @@ import { Resend } from "npm:resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const RECAPTCHA_SECRET = Deno.env.get("RECAPTCHA_SECRET_KEY");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -32,6 +33,31 @@ serve(async (req: Request) => {
   try {
     const body = await req.json();
     const d = body.submission;
+    const recaptchaToken = body.recaptchaToken;
+
+    // Verify reCAPTCHA
+    if (!recaptchaToken) {
+      return new Response(JSON.stringify({ error: "CAPTCHA não enviado." }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    const captchaRes = await fetch("https://www.google.com/recaptcha/api/siteverify", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: `secret=${RECAPTCHA_SECRET}&response=${recaptchaToken}`,
+    });
+    const captchaData = await captchaRes.json();
+
+    if (!captchaData.success || (captchaData.score !== undefined && captchaData.score < 0.3)) {
+      console.log("reCAPTCHA failed:", captchaData);
+      return new Response(JSON.stringify({ error: "Verificação CAPTCHA falhou." }), {
+        status: 403,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
     const attachments: { filename: string; content: string }[] = [];
 
     // Download attachments from storage if URLs exist
