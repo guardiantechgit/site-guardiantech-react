@@ -5,6 +5,7 @@ import AdminLayout from "./admin/AdminLayout";
 import AdminDashboard from "./admin/AdminDashboard";
 import AdminCoupons from "./admin/AdminCoupons";
 import AdminSubmissions from "./admin/AdminSubmissions";
+import AdminContracts from "./admin/AdminContracts";
 import { Loader2 } from "lucide-react";
 
 const Admin = () => {
@@ -28,6 +29,7 @@ const Admin = () => {
         <Route index element={<AdminDashboard />} />
         <Route path="cupons" element={<AdminCoupons />} />
         <Route path="formularios" element={<AdminSubmissions />} />
+        <Route path="contratos" element={<AdminContracts />} />
       </Route>
     </Routes>
   );

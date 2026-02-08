@@ -3,7 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 import { Eye, Search, Download } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -28,6 +27,7 @@ const AdminSubmissions = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Submission | null>(null);
+  const [tab, setTab] = useState<"pf" | "pj">("pf");
 
   const fetchSubmissions = async () => {
     setLoading(true);
@@ -41,15 +41,21 @@ const AdminSubmissions = () => {
 
   useEffect(() => { fetchSubmissions(); }, []);
 
-  const filtered = submissions.filter((s) => {
-    const q = search.toLowerCase();
-    return (
-      s.full_name.toLowerCase().includes(q) ||
-      s.cpf.includes(q) ||
-      s.email.toLowerCase().includes(q) ||
-      (s.vehicle_plate || "").toLowerCase().includes(q)
-    );
-  });
+  const filtered = submissions
+    .filter((s) => (s.form_type || "pf") === tab)
+    .filter((s) => {
+      const q = search.toLowerCase();
+      return (
+        s.full_name.toLowerCase().includes(q) ||
+        s.cpf.includes(q) ||
+        s.email.toLowerCase().includes(q) ||
+        (s.vehicle_plate || "").toLowerCase().includes(q) ||
+        (s.cnpj || "").includes(q)
+      );
+    });
+
+  const pfCount = submissions.filter((s) => (s.form_type || "pf") === "pf").length;
+  const pjCount = submissions.filter((s) => s.form_type === "pj").length;
 
   const updateStatus = async (id: string, status: string) => {
     await supabase.from("form_submissions").update({ status }).eq("id", id);
@@ -58,9 +64,8 @@ const AdminSubmissions = () => {
   };
 
   const openDocument = async (storagePath: string) => {
-    // storagePath is like "documents/uuid.ext"
     const path = storagePath.replace(/^documents\//, "");
-    const { data, error } = await supabase.storage
+    const { data } = await supabase.storage
       .from("documents")
       .createSignedUrl(path, 3600);
     if (data?.signedUrl) {
@@ -84,15 +89,37 @@ const AdminSubmissions = () => {
     );
   };
 
+  const isPJ = selected?.form_type === "pj";
+
   return (
     <div className="space-y-4">
+      {/* Tabs */}
+      <div className="flex items-center gap-1 bg-muted p-1 rounded-lg w-fit">
+        <button
+          onClick={() => setTab("pf")}
+          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            tab === "pf" ? "bg-white text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Pessoa Física ({pfCount})
+        </button>
+        <button
+          onClick={() => setTab("pj")}
+          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            tab === "pj" ? "bg-white text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Pessoa Jurídica ({pjCount})
+        </button>
+      </div>
+
       <div className="flex items-center gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por nome, CPF, e-mail ou placa..."
+            placeholder={tab === "pf" ? "Buscar por nome, CPF, e-mail ou placa..." : "Buscar por razão social, CNPJ, e-mail ou placa..."}
             className="pl-9"
           />
         </div>
@@ -104,7 +131,9 @@ const AdminSubmissions = () => {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/50">
-                <th className="text-left px-4 py-3 font-alt font-semibold text-foreground">Nome</th>
+                <th className="text-left px-4 py-3 font-alt font-semibold text-foreground">
+                  {tab === "pf" ? "Nome" : "Razão Social"}
+                </th>
                 <th className="text-left px-4 py-3 font-alt font-semibold text-foreground">Veículo</th>
                 <th className="text-left px-4 py-3 font-alt font-semibold text-foreground">Plano</th>
                 <th className="text-left px-4 py-3 font-alt font-semibold text-foreground">Data</th>
@@ -121,12 +150,10 @@ const AdminSubmissions = () => {
                 filtered.map((s) => (
                   <tr key={s.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3">
-                      <p className="font-medium text-foreground">{s.full_name}</p>
+                      <p className="font-medium text-foreground">{s.razao_social || s.full_name}</p>
                       <p className="text-xs text-muted-foreground">{s.email}</p>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {s.vehicle_plate || "—"}
-                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">{s.vehicle_plate || "—"}</td>
                     <td className="px-4 py-3 text-muted-foreground">{s.plan_name || "—"}</td>
                     <td className="px-4 py-3 text-muted-foreground text-xs">{formatDate(s.created_at)}</td>
                     <td className="px-4 py-3 text-center">
@@ -153,7 +180,7 @@ const AdminSubmissions = () => {
           {selected && (
             <>
               <DialogHeader>
-                <DialogTitle className="font-alt">{selected.full_name}</DialogTitle>
+                <DialogTitle className="font-alt">{selected.razao_social || selected.full_name}</DialogTitle>
               </DialogHeader>
 
               <div className="space-y-1 mb-4">
@@ -175,15 +202,28 @@ const AdminSubmissions = () => {
               </div>
 
               <div className="space-y-6 text-sm">
-                {/* Dados pessoais */}
+                {/* Dados */}
                 <section>
-                  <h3 className="font-alt font-semibold text-foreground border-b pb-1 mb-3">Dados Pessoais</h3>
+                  <h3 className="font-alt font-semibold text-foreground border-b pb-1 mb-3">
+                    {isPJ ? "Dados da Empresa" : "Dados Pessoais"}
+                  </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <Field label="Nome" value={selected.full_name} />
+                    {isPJ ? (
+                      <>
+                        <Field label="Razão Social" value={selected.razao_social} />
+                        <Field label="Nome Fantasia" value={selected.nome_fantasia} />
+                        <Field label="CNPJ" value={selected.cnpj} />
+                        <Field label="Inscrição Estadual" value={selected.ie} />
+                      </>
+                    ) : (
+                      <>
+                        <Field label="Nome" value={selected.full_name} />
+                        <Field label="CPF" value={selected.cpf} />
+                        <Field label="RG" value={selected.rg} />
+                        <Field label="Nascimento" value={selected.birth_date} />
+                      </>
+                    )}
                     <Field label="E-mail" value={selected.email} />
-                    <Field label="CPF" value={selected.cpf} />
-                    <Field label="RG" value={selected.rg} />
-                    <Field label="Nascimento" value={selected.birth_date} />
                     <Field label="Telefone" value={selected.phone_primary} />
                     <Field label="Telefone 2" value={selected.phone_secondary} />
                     <Field label="Usuário Plataforma" value={selected.platform_username} />
@@ -214,6 +254,18 @@ const AdminSubmissions = () => {
                     <Field label="Parentesco" value={selected.emergency_relationship} />
                   </div>
                 </section>
+
+                {/* Contato Financeiro (PJ only) */}
+                {isPJ && (selected.financial_name || selected.financial_phone || selected.financial_email) && (
+                  <section>
+                    <h3 className="font-alt font-semibold text-foreground border-b pb-1 mb-3">Contato do Financeiro</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <Field label="Nome" value={selected.financial_name} />
+                      <Field label="Telefone" value={selected.financial_phone} />
+                      <Field label="E-mail" value={selected.financial_email} />
+                    </div>
+                  </section>
+                )}
 
                 {/* Veículo */}
                 <section>
@@ -299,7 +351,6 @@ const AdminSubmissions = () => {
                   )}
                 </section>
 
-                {/* Notas */}
                 <Field label="Observações" value={selected.notes} />
               </div>
             </>
@@ -308,12 +359,6 @@ const AdminSubmissions = () => {
       </Dialog>
     </div>
   );
-};
-
-const formatDate = (d: string) => {
-  return new Date(d).toLocaleDateString("pt-BR", {
-    day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
-  });
 };
 
 export default AdminSubmissions;

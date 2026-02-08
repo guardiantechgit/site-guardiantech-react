@@ -31,6 +31,15 @@ export function formatPlate(raw: string): string {
   return alnum.slice(0, 3) + "-" + alnum.slice(3);
 }
 
+export function formatCNPJ(digits: string): string {
+  let d = (digits || "").slice(0, 14);
+  d = d.replace(/(\d{2})(\d)/, "$1.$2");
+  d = d.replace(/(\d{3})(\d)/, "$1.$2");
+  d = d.replace(/(\d{3})(\d)/, "$1/$2");
+  d = d.replace(/(\d{4})(\d{1,2})$/, "$1-$2");
+  return d;
+}
+
 export function sanitizeUsername(value: string): string {
   return (value || "")
     .replace(/\s+/g, "")

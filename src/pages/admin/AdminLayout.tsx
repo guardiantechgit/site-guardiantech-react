@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, Outlet } from "react-router-dom";
-import { Tag, FileText, LogOut, Menu, X, LayoutDashboard } from "lucide-react";
+import { Tag, FileText, LogOut, Menu, X, LayoutDashboard, ScrollText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface Props {
@@ -11,6 +11,7 @@ const navItems = [
   { title: "Dashboard", path: "/admin", icon: LayoutDashboard },
   { title: "Cupons", path: "/admin/cupons", icon: Tag },
   { title: "Formulários", path: "/admin/formularios", icon: FileText },
+  { title: "Contratos", path: "/admin/contratos", icon: ScrollText },
 ];
 
 const AdminLayout = ({ onLogout }: Props) => {
