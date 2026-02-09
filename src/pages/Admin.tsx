@@ -8,6 +8,7 @@ import AdminSubmissions from "./admin/AdminSubmissions";
 import AdminContracts from "./admin/AdminContracts";
 import AdminRepresentatives from "./admin/AdminRepresentatives";
 import AdminCommissions from "./admin/AdminCommissions";
+import AdminClientes from "./admin/AdminClientes";
 import { Loader2 } from "lucide-react";
 
 const Admin = () => {
@@ -34,6 +35,7 @@ const Admin = () => {
         <Route path="contratos" element={<AdminContracts />} />
         <Route path="representantes" element={<AdminRepresentatives />} />
         <Route path="comissoes" element={<AdminCommissions />} />
+        <Route path="clientes" element={<AdminClientes />} />
       </Route>
     </Routes>
   );

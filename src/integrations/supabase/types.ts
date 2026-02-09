@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      client_logos: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          image_url: string
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          image_url: string
+          name?: string
+          sort_order?: number
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          image_url?: string
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       contracts: {
         Row: {
           content: string

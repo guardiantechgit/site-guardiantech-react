@@ -1,35 +1,23 @@
 import { useEffect, useRef, useState } from "react";
 import AnimatedSection from "@/components/AnimatedSection";
-
-const clients = [
-  "cliente-vencomatic.png",
-  "cliente-asernet.png",
-  "cliente-peluso-sperandio.png",
-  "cliente-sobradao.png",
-  "cliente-florestas-da-sao-vicente.png",
-  "cliente-luxiluminacao.png",
-  "cliente-sitio-dos-ipes.png",
-  "cliente-villa-real-de-braganca.png",
-  "cliente-lumaq.png",
-  "cliente-ac-oliveira.png",
-  "cliente-hgb.png",
-  "cliente-eletricaapolo.png",
-  "cliente-comandofox.png",
-  "cliente-uaiveiculos.png",
-  "cliente-logmov.png",
-  "cliente-locagora.png",
-];
+import { useClientLogos } from "@/hooks/useClientLogos";
 
 const ClientsCarousel = () => {
+  const { data: logos = [] } = useClientLogos(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [offset, setOffset] = useState(0);
 
   useEffect(() => {
+    if (logos.length === 0) return;
     const interval = setInterval(() => {
       setOffset((prev) => prev + 1);
     }, 30);
     return () => clearInterval(interval);
-  }, []);
+  }, [logos.length]);
+
+  if (logos.length === 0) return null;
+
+  const doubled = [...logos, ...logos];
 
   return (
     <section className="py-10">
@@ -45,16 +33,16 @@ const ClientsCarousel = () => {
             ref={scrollRef}
             className="flex items-center gap-10"
             style={{
-              transform: `translateX(-${offset % (clients.length * 200)}px)`,
+              transform: `translateX(-${offset % (logos.length * 200)}px)`,
               transition: "none",
-              width: `${clients.length * 2 * 200}px`,
+              width: `${logos.length * 2 * 200}px`,
             }}
           >
-            {[...clients, ...clients].map((c, i) => (
-              <div key={i} className="flex-shrink-0 flex items-center justify-center" style={{ width: 180 }}>
+            {doubled.map((logo, i) => (
+              <div key={`${logo.id}-${i}`} className="flex-shrink-0 flex items-center justify-center" style={{ width: 180 }}>
                 <img
-                  src={`/images/${c}`}
-                  alt=""
+                  src={logo.image_url}
+                  alt={logo.name}
                   className="h-[120px] object-contain opacity-70 hover:opacity-100 transition"
                   loading="lazy"
                 />
