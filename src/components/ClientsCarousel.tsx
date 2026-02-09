@@ -24,7 +24,7 @@ const ClientsCarousel = () => {
       <img
         src={logo.image_url}
         alt={logo.name}
-        className="h-[120px] object-contain opacity-70 hover:opacity-100 transition"
+        className="h-[120px] object-contain hover:opacity-70 transition"
         loading="lazy"
       />
     );
