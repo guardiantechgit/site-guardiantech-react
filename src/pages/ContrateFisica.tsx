@@ -11,7 +11,7 @@ import { lookupViaCep } from "@/lib/viaCep";
 import { useDocumentUpload } from "@/hooks/useDocumentUpload";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import SubmissionProgress, { type SubmissionStep } from "@/components/SubmissionProgress";
-// import { useRecaptcha } from "@/hooks/useRecaptcha"; // TEMPORARILY DISABLED
+import { useRecaptcha } from "@/hooks/useRecaptcha";
 import { supabase } from "@/integrations/supabase/client";
 import PageSEO from "@/components/PageSEO";
 
@@ -308,7 +308,7 @@ const ContrateFisica = () => {
 
   // Document upload
   const docUpload = useDocumentUpload();
-  // const { getToken } = useRecaptcha(); // TEMPORARILY DISABLED
+  const { getToken } = useRecaptcha();
 
   // Geolocation - request on first interaction
   const { geolocation: geoResult } = useGeolocation();
@@ -606,7 +606,7 @@ const ContrateFisica = () => {
       // Step 2: Metadata
       updateAndFlush("metadata", { status: "running" });
 
-      const recaptchaToken = "";
+      const recaptchaToken = await getToken("contrate_pf");
       let ipAddress = "";
       try {
         const ipRes = await fetch("https://api64.ipify.org?format=json");
