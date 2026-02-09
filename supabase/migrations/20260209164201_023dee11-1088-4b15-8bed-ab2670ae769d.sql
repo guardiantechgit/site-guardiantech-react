@@ -1,0 +1,1 @@
+ALTER TABLE public.client_logos ADD COLUMN url text DEFAULT '';
