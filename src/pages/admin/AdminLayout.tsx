@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, Outlet } from "react-router-dom";
-import { Tag, FileText, LogOut, Menu, X, LayoutDashboard, ScrollText, Users, BarChart3 } from "lucide-react";
+import { Tag, FileText, LogOut, Menu, X, LayoutDashboard, ScrollText, Users, BarChart3, ImageIcon } from "lucide-react";
 
 interface Props {
   onLogout: () => Promise<void> | void;
@@ -13,6 +13,7 @@ const navItems = [
   { title: "Formulários", path: "/admin/formularios", icon: FileText },
   { title: "Comissões", path: "/admin/comissoes", icon: BarChart3 },
   { title: "Contratos", path: "/admin/contratos", icon: ScrollText },
+  { title: "Clientes", path: "/admin/clientes", icon: ImageIcon },
 ];
 
 const AdminLayout = ({ onLogout }: Props) => {
