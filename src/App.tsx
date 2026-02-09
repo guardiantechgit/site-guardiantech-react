@@ -21,6 +21,11 @@ import AppDownload from "@/pages/AppDownload";
 import ScrollToTop from "@/components/ScrollToTop";
 import SiteLoader from "@/components/SiteLoader";
 
+const PlataformaRedirect = () => {
+  window.location.replace("https://plataforma.guardiantech.site/");
+  return null;
+};
+
 const queryClient = new QueryClient();
 
 const AppRoutes = () => {
@@ -44,6 +49,7 @@ const AppRoutes = () => {
         <Route path="/contrate-juridica" element={<ContrateJuridica />} />
         <Route path="/portaria-e-vigilancia" element={<EmConstrucao />} />
         <Route path="/app" element={<AppDownload />} />
+        <Route path="/plataforma" element={<PlataformaRedirect />} />
         <Route path="/admin/*" element={<Admin />} />
         <Route path="/carregando" element={<Carregando />} />
         <Route path="*" element={<NotFound />} />
