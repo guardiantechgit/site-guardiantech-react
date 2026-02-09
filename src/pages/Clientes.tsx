@@ -73,7 +73,7 @@ const Clientes = () => {
                     <img
                       src={logo.image_url}
                       alt={logo.name}
-                      className="h-[150px] w-[220px] object-contain hover:opacity-70 transition"
+                      className="h-[150px] w-[220px] object-contain hover:opacity-70 transition duration-500"
                       loading="lazy"
                     />
                   )}
