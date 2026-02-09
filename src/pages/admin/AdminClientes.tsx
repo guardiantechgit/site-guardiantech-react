@@ -33,7 +33,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Plus, Trash2, GripVertical, Loader2, ImageIcon, ExternalLink } from "lucide-react";
+import { Plus, Trash2, GripVertical, Loader2, ImageIcon, ExternalLink, Pencil } from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -57,9 +57,10 @@ interface SortableRowProps {
   index: number;
   onToggle: (logo: ClientLogo) => void;
   onDelete: (logo: ClientLogo) => void;
+  onEdit: (logo: ClientLogo) => void;
 }
 
-const SortableRow = ({ logo, index, onToggle, onDelete }: SortableRowProps) => {
+const SortableRow = ({ logo, index, onToggle, onDelete, onEdit }: SortableRowProps) => {
   const {
     attributes,
     listeners,
@@ -102,19 +103,19 @@ const SortableRow = ({ logo, index, onToggle, onDelete }: SortableRowProps) => {
           />
         </div>
       </TableCell>
-      <TableCell className="font-medium">
+      <TableCell className="font-medium">{logo.name}</TableCell>
+      <TableCell>
         {logo.url ? (
           <a
             href={logo.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-primary hover:underline"
+            className="inline-flex items-center gap-1 text-primary hover:underline text-sm"
           >
-            {logo.name}
-            <ExternalLink size={12} />
+            <ExternalLink size={12} /> Visitar
           </a>
         ) : (
-          logo.name
+          <span className="text-sm text-muted-foreground">Vazio</span>
         )}
       </TableCell>
       <TableCell className="text-center">
@@ -122,6 +123,9 @@ const SortableRow = ({ logo, index, onToggle, onDelete }: SortableRowProps) => {
       </TableCell>
       <TableCell>
         <div className="flex items-center justify-end gap-1">
+          <Button variant="ghost" size="icon" onClick={() => onEdit(logo)}>
+            <Pencil size={14} />
+          </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
@@ -157,6 +161,15 @@ const AdminClientes = () => {
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
+  // Edit state
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editLogo, setEditLogo] = useState<ClientLogo | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editUrl, setEditUrl] = useState("");
+  const [editFile, setEditFile] = useState<File | null>(null);
+  const [editPreview, setEditPreview] = useState<string | null>(null);
+  const [editUploading, setEditUploading] = useState(false);
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -175,6 +188,20 @@ const AdminClientes = () => {
     setNewFile(file);
     const reader = new FileReader();
     reader.onload = (ev) => setPreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const handleEditFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/png")) {
+      toast({ title: "Formato inválido", description: "Envie apenas arquivos PNG.", variant: "destructive" });
+      e.target.value = "";
+      return;
+    }
+    setEditFile(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => setEditPreview(ev.target?.result as string);
     reader.readAsDataURL(file);
   };
 
@@ -217,6 +244,59 @@ const AdminClientes = () => {
     }
   };
 
+  const handleOpenEdit = (logo: ClientLogo) => {
+    setEditLogo(logo);
+    setEditName(logo.name);
+    setEditUrl(logo.url || "");
+    setEditFile(null);
+    setEditPreview(null);
+    setEditDialogOpen(true);
+  };
+
+  const handleEdit = async () => {
+    if (!editLogo || !editName.trim()) {
+      toast({ title: "Preencha o nome.", variant: "destructive" });
+      return;
+    }
+    setEditUploading(true);
+    try {
+      let imageUrl = editLogo.image_url;
+
+      if (editFile) {
+        // Upload new image
+        const ext = editFile.name.split(".").pop();
+        const fileName = `${Date.now()}.${ext}`;
+        const { error: uploadErr } = await supabase.storage
+          .from("client-logos")
+          .upload(fileName, editFile, { contentType: editFile.type });
+        if (uploadErr) throw uploadErr;
+
+        // Remove old image
+        if (editLogo.image_url.includes("client-logos")) {
+          const oldPath = editLogo.image_url.split("/client-logos/")[1];
+          if (oldPath) await supabase.storage.from("client-logos").remove([oldPath]);
+        }
+
+        const { data: urlData } = supabase.storage.from("client-logos").getPublicUrl(fileName);
+        imageUrl = urlData.publicUrl;
+      }
+
+      const { error } = await supabase
+        .from("client_logos")
+        .update({ name: editName.trim(), url: editUrl.trim(), image_url: imageUrl })
+        .eq("id", editLogo.id);
+      if (error) throw error;
+
+      toast({ title: "Logo atualizado com sucesso!" });
+      setEditDialogOpen(false);
+      invalidate();
+    } catch (err: any) {
+      toast({ title: "Erro ao atualizar", description: err.message, variant: "destructive" });
+    } finally {
+      setEditUploading(false);
+    }
+  };
+
   const handleToggle = async (logo: ClientLogo) => {
     const { error } = await supabase
       .from("client_logos")
@@ -255,10 +335,8 @@ const AdminClientes = () => {
       const newIndex = sorted.findIndex((l) => l.id === over.id);
       const reordered = arrayMove(sorted, oldIndex, newIndex);
 
-      // Optimistically update cache
       queryClient.setQueryData(["client-logos", false], reordered.map((l, i) => ({ ...l, sort_order: i })));
 
-      // Persist all new sort_orders
       const updates = reordered.map((l, i) =>
         supabase.from("client_logos").update({ sort_order: i }).eq("id", l.id)
       );
@@ -339,10 +417,11 @@ const AdminClientes = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12">Ordem</TableHead>
-                  <TableHead className="w-[200px]">Logo</TableHead>
+                  <TableHead className="w-[120px]">Logo</TableHead>
                   <TableHead>Nome</TableHead>
+                  <TableHead className="w-24">URL</TableHead>
                   <TableHead className="w-24 text-center">Ativo</TableHead>
-                  <TableHead className="w-20 text-right">Ações</TableHead>
+                  <TableHead className="w-24 text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -354,6 +433,7 @@ const AdminClientes = () => {
                       index={idx}
                       onToggle={handleToggle}
                       onDelete={handleDelete}
+                      onEdit={handleOpenEdit}
                     />
                   ))}
                 </SortableContext>
@@ -362,6 +442,43 @@ const AdminClientes = () => {
           </DndContext>
         </div>
       )}
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Logo de Cliente</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Nome do cliente</Label>
+              <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Ex: Empresa XYZ" />
+            </div>
+            <div>
+              <Label>URL do site ou rede social</Label>
+              <Input value={editUrl} onChange={(e) => setEditUrl(e.target.value)} placeholder="https://exemplo.com" />
+            </div>
+            <div>
+              <Label>Substituir imagem (opcional)</Label>
+              <p className="text-xs text-muted-foreground mb-2">
+                Formato: PNG · Dimensão recomendada: 176×120 pixels
+              </p>
+              <Input type="file" accept="image/png" onChange={handleEditFileChange} />
+            </div>
+            <div className="flex items-center justify-center p-4 border rounded-lg bg-muted/30">
+              <img
+                src={editPreview || editLogo?.image_url}
+                alt="Preview"
+                className="h-[120px] w-[176px] object-contain"
+              />
+            </div>
+            <Button onClick={handleEdit} disabled={editUploading} className="w-full">
+              {editUploading ? <Loader2 className="animate-spin mr-2" size={16} /> : null}
+              {editUploading ? "Salvando..." : "Salvar alterações"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
