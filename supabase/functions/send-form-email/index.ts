@@ -101,8 +101,27 @@ serve(async (req: Request) => {
     const d = body.submission;
     const recaptchaToken = body.recaptchaToken;
 
-    // reCAPTCHA verification TEMPORARILY DISABLED
-    // TODO: Re-enable when using production domain
+    // reCAPTCHA v3 verification
+    if (!recaptchaToken || typeof recaptchaToken !== "string") {
+      return new Response(JSON.stringify({ error: "Token de segurança ausente." }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    const recaptchaRes = await fetch(
+      `https://www.google.com/recaptcha/api/siteverify?secret=${RECAPTCHA_SECRET}&response=${recaptchaToken}`,
+      { method: "POST" }
+    );
+    const recaptchaData = await recaptchaRes.json();
+
+    if (!recaptchaData.success || (recaptchaData.score != null && recaptchaData.score < 0.5)) {
+      console.warn("reCAPTCHA failed:", recaptchaData);
+      return new Response(JSON.stringify({ error: "Verificação de segurança falhou. Tente novamente." }), {
+        status: 403,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
 
     // Server-side validation
     if (!d || typeof d !== "object") {
