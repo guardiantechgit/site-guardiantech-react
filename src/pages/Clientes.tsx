@@ -57,7 +57,7 @@ const Clientes = () => {
                   key={logo.id}
                   initial={{ opacity: 0, y: 30 }}
                   animate={loaderDone ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-                  transition={{ duration: 0.6, delay: i * 0.1 }}
+                  transition={{ duration: 0.8, delay: i * 0.15 }}
                   className="flex items-center justify-center py-4"
                 >
                   <img
