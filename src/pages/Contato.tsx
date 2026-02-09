@@ -3,7 +3,7 @@ import { Smile, Phone, Mail, MessageSquare, Loader2 } from "lucide-react";
 import PageTitle from "@/components/PageTitle";
 import AnimatedSection from "@/components/AnimatedSection";
 import PageSEO from "@/components/PageSEO";
-// import { useRecaptcha } from "@/hooks/useRecaptcha"; // TEMPORARILY DISABLED
+import { useRecaptcha } from "@/hooks/useRecaptcha";
 import { supabase } from "@/integrations/supabase/client";
 
 const formatPhone = (value: string) => {
@@ -26,7 +26,7 @@ const Contato = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
-  // const { getToken } = useRecaptcha(); // TEMPORARILY DISABLED
+  const { getToken } = useRecaptcha();
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -44,12 +44,14 @@ const Contato = () => {
     setSubmitting(true);
 
     try {
+      const recaptchaToken = await getToken("contact");
       const { data, error } = await supabase.functions.invoke("send-contact-email", {
         body: {
           nome: form.nome.trim(),
           telefone: form.telefone,
           email: form.email.trim(),
           mensagem: form.mensagem.trim(),
+          recaptchaToken,
         },
       });
 
@@ -234,7 +236,7 @@ const Contato = () => {
                         "Enviar mensagem"
                       )}
                     </button>
-                    {/* reCAPTCHA temporarily disabled */}
+                    <p className="text-[10px] text-medium-gray mt-2">Este site é protegido pelo reCAPTCHA do Google. <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="underline">Política de Privacidade</a> e <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer" className="underline">Termos de Serviço</a>.</p>
                   </form>
                 )}
               </div>
