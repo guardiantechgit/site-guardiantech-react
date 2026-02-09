@@ -367,7 +367,7 @@ const CollectedDataFooter = ({ geolocation }: { geolocation?: string }) => {
 
   return (
     <div className="md:col-span-2 mt-2">
-      <small className="block text-medium-gray text-[8px] leading-relaxed">
+      <small className="block text-medium-gray text-[9px] leading-relaxed">
         <strong>Dados coletados:</strong> IP: {ip} — Navegador e SO: {parseUserAgent(navigator.userAgent)} — Data e
         Hora: {dateStr} às {timeStr}
         {geolocation ? ` — Localização: ${geolocation}` : ""}
