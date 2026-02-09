@@ -169,7 +169,7 @@ const AppDownload = () => {
         <div className="app-wrap">
           {!isMobile ? (
             <div className="app-card">
-              <img className="app-logo" src="https://guardiantech.site/images/guardiantech-app.png" alt="GuardianTrack - Download nas lojas oficiais" />
+              <img className="app-logo" src="/images/logo-white.png" alt="GuardianTech" />
               <p>O aplicativo está disponível para <strong>App Store (iOS)</strong> e <strong>Google Play (Android)</strong>, porém identificamos que você está em um <strong>computador</strong>.</p>
               <p className="app-hint">Você será redirecionado para a <strong>Plataforma Web</strong> em <span className="app-count">{countdown}</span>…</p>
               <p className="app-hint">Se quiser acessar o aplicativo nas lojas oficiais, utilize os botões abaixo.</p>
@@ -183,7 +183,7 @@ const AppDownload = () => {
             </div>
           ) : (
             <div className="app-card">
-              <img className="app-logo" src="https://guardiantech.site/images/guardiantrack-loja.png" alt="GuardianTech - Download nas lojas oficiais" />
+              <img className="app-logo" src="/images/logo-white.png" alt="GuardianTech" />
               <p className="app-lead">
                 Foi detectado que você está utilizando um <strong>{deviceName}</strong>, portanto, estamos direcionando você para a <strong>{storeName}</strong>.
               </p>
