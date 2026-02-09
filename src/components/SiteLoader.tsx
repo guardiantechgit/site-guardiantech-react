@@ -118,9 +118,10 @@ const SiteLoader = ({ children }: { children: React.ReactNode }) => {
 
             {/* Logo + rings container - everything centered together */}
             <div className="relative z-10 flex items-center justify-center w-40 h-40 md:w-44 md:h-44 mb-6">
-              {/* Animated rings */}
+            {/* Animated ring */}
               <svg
-                className="absolute inset-0 w-full h-full"
+                className="absolute inset-0 w-full h-full animate-spin"
+                style={{ animationDuration: "2s" }}
                 viewBox="0 0 100 100"
               >
                 <circle
@@ -132,35 +133,8 @@ const SiteLoader = ({ children }: { children: React.ReactNode }) => {
                   strokeWidth="1.5"
                   strokeDasharray="80 200"
                   strokeLinecap="round"
-                  opacity="0.5"
-                >
-                  <animateTransform
-                    attributeName="transform"
-                    type="rotate"
-                    values="0 50 50;360 50 50"
-                    dur="2.5s"
-                    repeatCount="indefinite"
-                  />
-                </circle>
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="42"
-                  fill="none"
-                  stroke="hsl(44 35% 52%)"
-                  strokeWidth="0.8"
-                  strokeDasharray="40 180"
-                  strokeLinecap="round"
-                  opacity="0.3"
-                >
-                  <animateTransform
-                    attributeName="transform"
-                    type="rotate"
-                    values="360 50 50;0 50 50"
-                    dur="3.5s"
-                    repeatCount="indefinite"
-                  />
-                </circle>
+                  opacity="0.6"
+                />
               </svg>
 
               {/* Logo centered inside the rings */}
