@@ -22,6 +22,7 @@ export type Database = {
           image_url: string
           name: string
           sort_order: number
+          url: string | null
         }
         Insert: {
           active?: boolean
@@ -30,6 +31,7 @@ export type Database = {
           image_url: string
           name?: string
           sort_order?: number
+          url?: string | null
         }
         Update: {
           active?: boolean
@@ -38,6 +40,7 @@ export type Database = {
           image_url?: string
           name?: string
           sort_order?: number
+          url?: string | null
         }
         Relationships: []
       }

@@ -19,6 +19,29 @@ const ClientsCarousel = () => {
 
   const doubled = [...logos, ...logos];
 
+  const renderLogo = (logo: typeof logos[0], i: number) => {
+    const img = (
+      <img
+        src={logo.image_url}
+        alt={logo.name}
+        className="h-[120px] object-contain opacity-70 hover:opacity-100 transition"
+        loading="lazy"
+      />
+    );
+
+    return (
+      <div key={`${logo.id}-${i}`} className="flex-shrink-0 flex items-center justify-center" style={{ width: 180 }}>
+        {logo.url ? (
+          <a href={logo.url} target="_blank" rel="noopener noreferrer">
+            {img}
+          </a>
+        ) : (
+          img
+        )}
+      </div>
+    );
+  };
+
   return (
     <section className="py-10">
       <div className="container mx-auto px-4">
@@ -38,16 +61,7 @@ const ClientsCarousel = () => {
               width: `${logos.length * 2 * 200}px`,
             }}
           >
-            {doubled.map((logo, i) => (
-              <div key={`${logo.id}-${i}`} className="flex-shrink-0 flex items-center justify-center" style={{ width: 180 }}>
-                <img
-                  src={logo.image_url}
-                  alt={logo.name}
-                  className="h-[120px] object-contain opacity-70 hover:opacity-100 transition"
-                  loading="lazy"
-                />
-              </div>
-            ))}
+            {doubled.map((logo, i) => renderLogo(logo, i))}
           </div>
         </div>
       </div>

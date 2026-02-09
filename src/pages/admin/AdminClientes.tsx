@@ -33,17 +33,134 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Plus, Trash2, GripVertical, ArrowUp, ArrowDown, Loader2, ImageIcon } from "lucide-react";
+import { Plus, Trash2, GripVertical, Loader2, ImageIcon, ExternalLink } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+
+interface SortableRowProps {
+  logo: ClientLogo;
+  index: number;
+  onToggle: (logo: ClientLogo) => void;
+  onDelete: (logo: ClientLogo) => void;
+}
+
+const SortableRow = ({ logo, index, onToggle, onDelete }: SortableRowProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: logo.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : undefined,
+  };
+
+  return (
+    <TableRow
+      ref={setNodeRef}
+      style={style}
+      className={!logo.active ? "opacity-50" : ""}
+    >
+      <TableCell>
+        <div className="flex items-center gap-1">
+          <button
+            {...attributes}
+            {...listeners}
+            className="cursor-grab active:cursor-grabbing touch-none p-1"
+          >
+            <GripVertical size={14} className="text-muted-foreground" />
+          </button>
+          <span className="text-xs text-muted-foreground">{index + 1}</span>
+        </div>
+      </TableCell>
+      <TableCell>
+        <div className="h-[60px] w-[88px] flex items-center justify-center bg-muted/30 rounded">
+          <img
+            src={logo.image_url}
+            alt={logo.name}
+            className="h-[60px] w-[88px] object-contain"
+          />
+        </div>
+      </TableCell>
+      <TableCell className="font-medium">
+        {logo.url ? (
+          <a
+            href={logo.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-primary hover:underline"
+          >
+            {logo.name}
+            <ExternalLink size={12} />
+          </a>
+        ) : (
+          logo.name
+        )}
+      </TableCell>
+      <TableCell className="text-center">
+        <Switch checked={logo.active} onCheckedChange={() => onToggle(logo)} />
+      </TableCell>
+      <TableCell>
+        <div className="flex items-center justify-end gap-1">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                <Trash2 size={14} />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Excluir logo?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  O logo de "{logo.name}" será removido permanentemente do site.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={() => onDelete(logo)}>Excluir</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+};
 
 const AdminClientes = () => {
   const { data: logos = [], isLoading } = useClientLogos(false);
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newName, setNewName] = useState("");
+  const [newUrl, setNewUrl] = useState("");
   const [newFile, setNewFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [movingId, setMovingId] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["client-logos"] });
 
@@ -80,6 +197,7 @@ const AdminClientes = () => {
 
       const { error: insertErr } = await supabase.from("client_logos").insert({
         name: newName.trim(),
+        url: newUrl.trim(),
         image_url: urlData.publicUrl,
         sort_order: maxOrder + 1,
       });
@@ -88,6 +206,7 @@ const AdminClientes = () => {
       toast({ title: "Logo adicionado com sucesso!" });
       setDialogOpen(false);
       setNewName("");
+      setNewUrl("");
       setNewFile(null);
       setPreview(null);
       invalidate();
@@ -111,7 +230,6 @@ const AdminClientes = () => {
   };
 
   const handleDelete = async (logo: ClientLogo) => {
-    // Try to delete from storage if it's a storage URL
     if (logo.image_url.includes("client-logos")) {
       const path = logo.image_url.split("/client-logos/")[1];
       if (path) {
@@ -127,22 +245,25 @@ const AdminClientes = () => {
     }
   };
 
-  const handleMove = useCallback(
-    async (logo: ClientLogo, direction: "up" | "down") => {
+  const handleDragEnd = useCallback(
+    async (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+
       const sorted = [...logos].sort((a, b) => a.sort_order - b.sort_order);
-      const idx = sorted.findIndex((l) => l.id === logo.id);
-      const swapIdx = direction === "up" ? idx - 1 : idx + 1;
-      if (swapIdx < 0 || swapIdx >= sorted.length) return;
+      const oldIndex = sorted.findIndex((l) => l.id === active.id);
+      const newIndex = sorted.findIndex((l) => l.id === over.id);
+      const reordered = arrayMove(sorted, oldIndex, newIndex);
 
-      setMovingId(logo.id);
-      const other = sorted[swapIdx];
-      const tmpOrder = logo.sort_order;
+      // Optimistically update cache
+      queryClient.setQueryData(["client-logos", false], reordered.map((l, i) => ({ ...l, sort_order: i })));
 
-      await supabase.from("client_logos").update({ sort_order: other.sort_order }).eq("id", logo.id);
-      await supabase.from("client_logos").update({ sort_order: tmpOrder }).eq("id", other.id);
-
+      // Persist all new sort_orders
+      const updates = reordered.map((l, i) =>
+        supabase.from("client_logos").update({ sort_order: i }).eq("id", l.id)
+      );
+      await Promise.all(updates);
       invalidate();
-      setMovingId(null);
     },
     [logos]
   );
@@ -163,7 +284,7 @@ const AdminClientes = () => {
         <div>
           <h3 className="text-lg font-semibold">Logos de Clientes</h3>
           <p className="text-sm text-muted-foreground">
-            Gerencie os logos exibidos no site. A ordem aqui será a ordem de exibição.
+            Gerencie os logos exibidos no site. Arraste para reordenar.
           </p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -180,6 +301,10 @@ const AdminClientes = () => {
               <div>
                 <Label>Nome do cliente</Label>
                 <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Ex: Empresa XYZ" />
+              </div>
+              <div>
+                <Label>URL do site ou rede social</Label>
+                <Input value={newUrl} onChange={(e) => setNewUrl(e.target.value)} placeholder="https://exemplo.com" />
               </div>
               <div>
                 <Label>Imagem do logo</Label>
@@ -209,81 +334,32 @@ const AdminClientes = () => {
         </div>
       ) : (
         <div className="border rounded-lg overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12">Ordem</TableHead>
-                <TableHead className="w-[200px]">Logo</TableHead>
-                <TableHead>Nome</TableHead>
-                <TableHead className="w-24 text-center">Ativo</TableHead>
-                <TableHead className="w-32 text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sorted.map((logo, idx) => (
-                <TableRow key={logo.id} className={!logo.active ? "opacity-50" : ""}>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <GripVertical size={14} className="text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">{idx + 1}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="h-[60px] w-[88px] flex items-center justify-center bg-muted/30 rounded">
-                      <img
-                        src={logo.image_url}
-                        alt={logo.name}
-                        className="h-[60px] w-[88px] object-contain"
-                      />
-                    </div>
-                  </TableCell>
-                  <TableCell className="font-medium">{logo.name}</TableCell>
-                  <TableCell className="text-center">
-                    <Switch checked={logo.active} onCheckedChange={() => handleToggle(logo)} />
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        disabled={idx === 0 || movingId === logo.id}
-                        onClick={() => handleMove(logo, "up")}
-                      >
-                        <ArrowUp size={14} />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        disabled={idx === sorted.length - 1 || movingId === logo.id}
-                        onClick={() => handleMove(logo, "down")}
-                      >
-                        <ArrowDown size={14} />
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
-                            <Trash2 size={14} />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Excluir logo?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              O logo de "{logo.name}" será removido permanentemente do site.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDelete(logo)}>Excluir</AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </TableCell>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-12">Ordem</TableHead>
+                  <TableHead className="w-[200px]">Logo</TableHead>
+                  <TableHead>Nome</TableHead>
+                  <TableHead className="w-24 text-center">Ativo</TableHead>
+                  <TableHead className="w-20 text-right">Ações</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                <SortableContext items={sorted.map((l) => l.id)} strategy={verticalListSortingStrategy}>
+                  {sorted.map((logo, idx) => (
+                    <SortableRow
+                      key={logo.id}
+                      logo={logo}
+                      index={idx}
+                      onToggle={handleToggle}
+                      onDelete={handleDelete}
+                    />
+                  ))}
+                </SortableContext>
+              </TableBody>
+            </Table>
+          </DndContext>
         </div>
       )}
     </div>

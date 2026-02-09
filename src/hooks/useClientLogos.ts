@@ -5,6 +5,7 @@ export interface ClientLogo {
   id: string;
   name: string;
   image_url: string;
+  url: string;
   active: boolean;
   sort_order: number;
   created_at: string;
