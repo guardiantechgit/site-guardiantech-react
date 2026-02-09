@@ -60,12 +60,23 @@ const Clientes = () => {
                   transition={{ duration: 0.8, delay: i * 0.15 }}
                   className="flex items-center justify-center py-4"
                 >
-                  <img
-                    src={logo.image_url}
-                    alt={logo.name}
-                    className="h-[150px] w-[220px] object-contain hover:opacity-70 transition"
-                    loading="lazy"
-                  />
+                  {logo.url ? (
+                    <a href={logo.url} target="_blank" rel="noopener noreferrer">
+                      <img
+                        src={logo.image_url}
+                        alt={logo.name}
+                        className="h-[150px] w-[220px] object-contain hover:opacity-70 transition"
+                        loading="lazy"
+                      />
+                    </a>
+                  ) : (
+                    <img
+                      src={logo.image_url}
+                      alt={logo.name}
+                      className="h-[150px] w-[220px] object-contain hover:opacity-70 transition"
+                      loading="lazy"
+                    />
+                  )}
                 </motion.div>
               ))}
             </div>
